@@ -1,0 +1,427 @@
+---
+title: "Type System"
+description: "Understand Go's type system, predeclared types, type safety, and creating custom types"
+---
+
+## Understanding Types
+
+Go is a statically typed language, which means every variable has a type known at compile time. This helps catch errors early and makes programs more reliable.
+
+### What is a Type?
+
+A type defines:
+- What values a variable can hold
+- How much memory it uses
+- What operations you can perform on it
+
+## Bits and Bytes
+
+### Bits
+
+A bit is the smallest unit of data in computing - it's either 0 or 1.
+
+### Bytes
+
+A byte consists of 8 bits. It's the basic unit used to measure memory and represent data.
+
+```go
+// 1 byte = 8 bits
+// Can represent values from 0-255 (unsigned)
+// Or -128 to 127 (signed)
+```
+
+Understanding bytes helps you choose appropriate types and optimize memory usage.
+
+## Predeclared Numeric Types
+
+Go provides several built-in numeric types with different sizes and ranges.
+
+### Integer Types
+
+```go
+import (
+    "fmt"
+    "math"
+    "unsafe"
+)
+
+func main() {
+    // Signed integers (can be positive or negative)
+    fmt.Println("int8   :", math.MinInt8, math.MaxInt8)       // -128 to 127
+    fmt.Println("int16  :", math.MinInt16, math.MaxInt16)     // -32768 to 32767
+    fmt.Println("int32  :", math.MinInt32, math.MaxInt32)     // -2147483648 to 2147483647
+    fmt.Println("int64  :", math.MinInt64, math.MaxInt64)     // very large range
+    
+    // Unsigned integers (only positive)
+    fmt.Println("uint8  :", 0, math.MaxUint8)      // 0 to 255
+    fmt.Println("uint16 :", 0, math.MaxUint16)     // 0 to 65535
+    fmt.Println("uint32 :", 0, math.MaxUint32)     // 0 to 4294967295
+    fmt.Println("uint64 :", 0, uint64(math.MaxUint64))
+}
+```
+
+### Platform-Dependent Types
+
+```go
+var x int     // 32 or 64 bits depending on platform
+var y uint    // 32 or 64 bits depending on platform
+```
+
+`int` and `uint` are the most commonly used integer types. Their size matches your platform architecture (32-bit or 64-bit).
+
+<Tip>
+When in doubt, use `int` for integers. It's the most idiomatic choice for integer values in Go.
+</Tip>
+
+### Floating-Point Types
+
+```go
+fmt.Println("float32:", math.SmallestNonzeroFloat32, math.MaxFloat32)
+fmt.Println("float64:", math.SmallestNonzeroFloat64, math.MaxFloat64)
+```
+
+- `float32`: 32-bit floating-point number
+- `float64`: 64-bit floating-point number (default for decimal literals)
+
+<Note>
+Use `float64` by default for floating-point numbers. It provides better precision and is the default type for decimal literals.
+</Note>
+
+### Memory Costs
+
+Different types use different amounts of memory:
+
+```go
+import "unsafe"
+
+fmt.Println("int8   :", unsafe.Sizeof(int8(1)), "bytes")    // 1 byte
+fmt.Println("int16  :", unsafe.Sizeof(int16(1)), "bytes")   // 2 bytes
+fmt.Println("int32  :", unsafe.Sizeof(int32(1)), "bytes")   // 4 bytes
+fmt.Println("int64  :", unsafe.Sizeof(int64(1)), "bytes")   // 8 bytes
+
+fmt.Println("float32:", unsafe.Sizeof(float32(1)), "bytes") // 4 bytes
+fmt.Println("float64:", unsafe.Sizeof(float64(1)), "bytes") // 8 bytes
+```
+
+Choose smaller types only when memory is a concern and you know the range of values.
+
+## Type Safety and Overflow
+
+Go is strongly typed - you cannot mix types without explicit conversion.
+
+### Overflow Example
+
+```go
+var (
+    width  uint8 = 255  // Maximum value for uint8
+    height       = 255  // int type
+)
+
+width++  // Wraps around to 0!
+
+if int(width) < height {
+    fmt.Println("height is greater")  // This will print!
+}
+
+fmt.Printf("width: %d height: %d\n", width, height)
+// Output: width: 0 height: 255
+```
+
+<Warning>
+**Integer overflow doesn't cause errors in Go** - it wraps around! A `uint8` can only hold 0-255. Adding 1 to 255 results in 0, not an error.
+</Warning>
+
+### Preventing Overflow
+
+Choose types that can handle your expected range of values:
+
+```go
+// Bad - will overflow
+var smallNum uint8 = 200
+smallNum += 100  // Wraps to 44
+
+// Good - has room to grow
+var largeNum int = 200
+largeNum += 100  // Correctly becomes 300
+```
+
+## Type Conversion
+
+Go requires explicit type conversion - there are no automatic conversions between different types.
+
+### Basic Conversion
+
+```go
+var i int = 42
+var f float64 = float64(i)  // Explicit conversion required
+var u uint = uint(f)
+
+// This would be an error:
+// var f float64 = i  // ✗ Error: cannot use i (type int) as type float64
+```
+
+### Converting in Expressions
+
+```go
+var (
+    width  uint8 = 255
+    height int   = 255
+)
+
+// Must convert to compare
+if int(width) < height {
+    fmt.Println("height is greater")
+}
+```
+
+<Steps>
+  <Step title="Identify type mismatch">
+    Compiler will tell you when types don't match
+  </Step>
+  
+  <Step title="Choose target type">
+    Decide which type you need for the operation
+  </Step>
+  
+  <Step title="Use Type(value) syntax">
+    Explicitly convert: `int(x)`, `float64(y)`, etc.
+  </Step>
+</Steps>
+
+## Defined Types
+
+You can create your own types based on existing types. This adds meaning and type safety to your code.
+
+### Creating Defined Types
+
+```go
+type (
+    gram  float64  // gram is a new type with underlying type float64
+    ounce float64  // ounce is a new type with underlying type float64
+)
+
+// Equivalent to:
+// type gram float64
+// type ounce float64
+```
+
+### Using Defined Types
+
+```go
+func main() {
+    var g gram = 1000
+    var o ounce
+    
+    // Type error: cannot directly assign different types
+    // o = g * 0.035274  // ✗ Error: cannot use gram as ounce
+    
+    // Must convert between defined types
+    o = ounce(g) * 0.035274  // ✓ Correct
+    
+    fmt.Printf("%g grams is %.2f ounce\n", g, o)
+    // Output: 1000 grams is 35.27 ounce
+}
+```
+
+### Why Use Defined Types?
+
+1. **Type Safety**: Prevents mixing incompatible values
+2. **Self-Documenting**: Code is clearer about what values represent
+3. **Method Attachment**: You can add methods to your types (covered later)
+
+```go
+// Clear and type-safe
+type userID int
+type productID int
+
+var user userID = 100
+var product productID = 200
+
+// This would be an error:
+// user = product  // ✗ Error: cannot assign productID to userID
+
+// Must explicitly convert (usually indicates a mistake):
+user = userID(product)  // Compiles but probably wrong
+```
+
+<Note>
+Defined types have the same underlying representation and memory layout as their base type, but Go treats them as completely different types.
+</Note>
+
+## Underlying Types
+
+Every type has an underlying type:
+
+```go
+type gram float64
+
+// gram's underlying type is float64
+// float64's underlying type is float64 (predeclared types are their own underlying type)
+```
+
+Types are convertible if they have the same underlying type:
+
+```go
+type gram float64
+type ounce float64
+
+var g gram = 1000
+var o ounce = ounce(g)  // ✓ OK: both have underlying type float64
+
+// Can also convert to/from underlying type
+var f float64 = float64(g)  // ✓ OK
+g = gram(f)                  // ✓ OK
+```
+
+## Type Aliases
+
+Type aliases create an alternate name for an existing type:
+
+```go
+type MyInt = int  // Alias (note the = sign)
+
+var x int = 10
+var y MyInt = x   // ✓ OK: MyInt and int are the same type
+
+// Compare to defined type:
+type MyDefinedInt int  // Defined type (no = sign)
+
+var z MyDefinedInt = x  // ✗ Error: different types
+```
+
+<Warning>
+Type aliases (`type A = B`) are rarely needed. They're mainly used for gradual code migration. Prefer defined types (`type A B`) for creating new types.
+</Warning>
+
+## Best Practices
+
+### Choosing Types
+
+1. **Use `int` for integer values** - It's the idiomatic default
+2. **Use `float64` for floating-point** - It's the default and has better precision
+3. **Use smaller types only when necessary** - When memory really matters
+4. **Consider overflow** - Choose types with appropriate ranges
+
+### Type Safety
+
+1. **Embrace explicit conversion** - It prevents bugs and makes code clear
+2. **Create defined types for domain concepts** - `userID`, `distance`, `duration`
+3. **Don't mix incompatible types** - If conversion feels wrong, it probably is
+4. **Use type aliases sparingly** - Mainly for gradual refactoring
+
+### Code Organization
+
+```go
+// Define domain-specific types at package level
+type (
+    userID   int
+    distance float64
+    duration int64
+)
+
+func getUser(id userID) { /* ... */ }
+func travel(d distance) { /* ... */ }
+```
+
+## Practical Examples
+
+### Distance Units
+
+```go
+type (
+    meter float64
+    kilometer float64
+)
+
+func main() {
+    var m meter = 1500
+    var km kilometer = kilometer(m) / 1000
+    
+    fmt.Printf("%.0f meters is %.1f kilometers\n", m, km)
+    // Output: 1500 meters is 1.5 kilometers
+}
+```
+
+### Temperature Conversion
+
+```go
+type (
+    celsius float64
+    fahrenheit float64
+)
+
+func toFahrenheit(c celsius) fahrenheit {
+    return fahrenheit(c * 9.0 / 5.0 + 32.0)
+}
+
+func main() {
+    temp := celsius(25.0)
+    fmt.Printf("%.1f°C is %.1f°F\n", temp, toFahrenheit(temp))
+    // Output: 25.0°C is 77.0°F
+}
+```
+
+### ID Types for Safety
+
+```go
+type (
+    userID    int
+    productID int
+    orderID   int
+)
+
+func getUser(id userID) { /* ... */ }
+func getProduct(id productID) { /* ... */ }
+
+func main() {
+    user := userID(12345)
+    product := productID(67890)
+    
+    getUser(user)          // ✓ Correct
+    // getUser(product)    // ✗ Error: type mismatch catches bug!
+}
+```
+
+## Common Pitfalls
+
+### Integer Division
+
+```go
+// Watch out for integer division
+var x int = 5
+var y int = 2
+fmt.Println(x / y)  // 2, not 2.5!
+
+// Fix: convert to float
+fmt.Println(float64(x) / float64(y))  // 2.5
+```
+
+### Overflow Wrapping
+
+```go
+var tiny uint8 = 255
+tiny++
+fmt.Println(tiny)  // 0 (wrapped around)
+
+tiny = 0
+tiny--
+fmt.Println(tiny)  // 255 (wrapped around)
+```
+
+### Forgetting Conversion
+
+```go
+var i int = 10
+var f float64 = 3.5
+
+// result := i * f  // ✗ Error: type mismatch
+result := float64(i) * f  // ✓ Correct
+```
+
+<Tip>
+Go's type system may seem strict at first, but it catches many bugs at compile time that would otherwise cause runtime errors or silent failures.
+</Tip>
+
+<Note>
+The type system is one of Go's strengths. It helps you write correct, maintainable code by making your intentions explicit and catching type-related errors before your program runs.
+</Note>

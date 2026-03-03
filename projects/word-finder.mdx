@@ -1,0 +1,392 @@
+---
+title: Word Finder
+description: Search for words in text using loops and string operations
+icon: magnifying-glass
+---
+
+Create a command-line tool that searches for words in a text corpus and reports the position of the first occurrence of each queried word.
+
+## What You'll Build
+
+A search program that:
+- Contains a predefined text corpus
+- Accepts multiple search words as command-line arguments
+- Finds the first occurrence of each word
+- Reports the position number of each match
+- Uses nested loops with `break` statements
+
+## What You'll Learn
+
+- Splitting strings into words with `strings.Fields`
+- Nested loop structures
+- Using `break` to exit loops early
+- Iterating over string slices
+- Command-line argument processing
+- Formatting output with `fmt.Printf`
+
+## Complete Implementation
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"strings"
+)
+
+const corpus = "lazy cat jumps again and again and again"
+
+func main() {
+	// Split corpus into words
+	words := strings.Fields(corpus)
+	
+	// Get search queries from command-line
+	query := os.Args[1:]
+
+	// Search for each queried word
+	for _, q := range query {
+		// Search through the corpus for this query
+		for i, w := range words {
+			if q == w {
+				fmt.Printf("#%-2d: %q\n", i+1, w)
+				break  // Found first occurrence, move to next query
+			}
+		}
+	}
+}
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Prepare the Corpus">
+    ```go
+    const corpus = "lazy cat jumps again and again and again"
+    
+    // Split into individual words
+    words := strings.Fields(corpus)
+    // Result: ["lazy", "cat", "jumps", "again", "and", "again", "and", "again"]
+    ```
+    
+    `strings.Fields` splits on any whitespace (spaces, tabs, newlines).
+  </Step>
+  
+  <Step title="Get Search Queries">
+    ```go
+    // Command: go run main.go cat again lazy
+    
+    query := os.Args[1:]
+    // query = ["cat", "again", "lazy"]
+    ```
+    
+    `os.Args[1:]` skips the program name and gets all arguments.
+  </Step>
+  
+  <Step title="Search with Nested Loops">
+    ```go
+    // Outer loop: for each query word
+    for _, q := range query {
+        // Inner loop: search through corpus
+        for i, w := range words {
+            if q == w {
+                fmt.Printf("#%-2d: %q\n", i+1, w)
+                break  // Exit inner loop only
+            }
+        }
+    }
+    ```
+    
+    **Key points:**
+    - Outer loop iterates over queries
+    - Inner loop searches the corpus
+    - `break` exits only the inner loop
+    - Outer loop continues with next query
+  </Step>
+</Steps>
+
+## Running the Program
+
+```bash
+# Search for single word
+go run main.go cat
+# Output: #2 : "cat"
+
+# Search for multiple words
+go run main.go again cat lazy
+# Output:
+# #4 : "again"
+# #2 : "cat"
+# #1 : "lazy"
+
+# Word not in corpus
+go run main.go dog
+# Output: (nothing - word not found)
+
+# Search for word appearing multiple times
+go run main.go again
+# Output: #4 : "again"
+# (Only first occurrence is reported)
+```
+
+## Understanding the Output Format
+
+```go
+fmt.Printf("#%-2d: %q\n", i+1, w)
+```
+
+**Format breakdown:**
+- `#` - Literal hash character
+- `%-2d` - Left-aligned integer, minimum 2 characters wide
+- `: ` - Literal colon and space
+- `%q` - Quoted string (adds double quotes)
+- `\n` - Newline
+
+**Examples:**
+```go
+fmt.Printf("#%-2d: %q\n", 1, "cat")   // #1 : "cat"
+fmt.Printf("#%-2d: %q\n", 10, "dog")  // #10: "dog"
+```
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="strings.Fields Function">
+    ```go
+    import "strings"
+    
+    // Split on any whitespace
+    words := strings.Fields("hello world\t\nGo")
+    // Result: ["hello", "world", "Go"]
+    
+    // Automatically handles:
+    // - Multiple spaces
+    // - Tabs
+    // - Newlines
+    // - Mixed whitespace
+    
+    text := "one  two   three"
+    words := strings.Fields(text)
+    // Result: ["one", "two", "three"]
+    ```
+  </Accordion>
+  
+  <Accordion title="Nested Loops with Break">
+    ```go
+    // Outer loop continues after inner break
+    for _, query := range queries {
+        for _, word := range words {
+            if query == word {
+                fmt.Println("Found:", word)
+                break  // Exits inner loop only
+            }
+        }
+        // Outer loop continues here
+    }
+    ```
+    
+    **Important:** `break` only exits the innermost loop.
+  </Accordion>
+  
+  <Accordion title="Range Over Slices">
+    ```go
+    words := []string{"a", "b", "c"}
+    
+    // Get index and value
+    for i, word := range words {
+        fmt.Printf("%d: %s\n", i, word)
+    }
+    // Output:
+    // 0: a
+    // 1: b
+    // 2: c
+    
+    // Ignore index with _
+    for _, word := range words {
+        fmt.Println(word)
+    }
+    
+    // Only index (rare)
+    for i := range words {
+        fmt.Println(i)
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Printf Format Specifiers">
+    ```go
+    // Common format verbs:
+    fmt.Printf("%d", 42)        // 42 (decimal)
+    fmt.Printf("%s", "hello")   // hello (string)
+    fmt.Printf("%q", "hello")   // "hello" (quoted)
+    fmt.Printf("%v", anything)  // default format
+    
+    // Width and alignment:
+    fmt.Printf("%5d", 42)       // "   42" (right-aligned, width 5)
+    fmt.Printf("%-5d", 42)      // "42   " (left-aligned, width 5)
+    fmt.Printf("%05d", 42)      // "00042" (zero-padded)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Algorithm Flow
+
+```
+Corpus: "lazy cat jumps again and again and again"
+Words:  [lazy, cat, jumps, again, and, again, and, again]
+Query:  [again, cat]
+
+Outer loop iteration 1: q = "again"
+  Inner loop:
+    i=0, w="lazy"   → "again" ≠ "lazy"   → continue
+    i=1, w="cat"    → "again" ≠ "cat"    → continue
+    i=2, w="jumps"  → "again" ≠ "jumps"  → continue
+    i=3, w="again"  → "again" = "again"  → MATCH! Print "#4: \"again\"" → break
+  
+Outer loop iteration 2: q = "cat"
+  Inner loop:
+    i=0, w="lazy"   → "cat" ≠ "lazy"     → continue
+    i=1, w="cat"    → "cat" = "cat"      → MATCH! Print "#2: \"cat\"" → break
+
+Done!
+```
+
+## Enhancements to Try
+
+1. **Show all occurrences** - Don't break, show every match
+2. **Case-insensitive search** - Match "Cat", "CAT", "cat"
+3. **Count occurrences** - Report how many times each word appears
+4. **Search in file** - Read corpus from a text file
+5. **Partial matches** - Find words containing the query
+6. **Context** - Show surrounding words
+7. **Regular expressions** - Use regex for complex patterns
+8. **Highlighted output** - Color-code the matches
+
+## Show All Occurrences
+
+Remove the `break` to find all matches:
+
+```go
+for _, q := range query {
+    for i, w := range words {
+        if q == w {
+            fmt.Printf("#%-2d: %q\n", i+1, w)
+            // No break - continue searching
+        }
+    }
+}
+```
+
+**Output for `again`:**
+```
+#4 : "again"
+#6 : "again"
+#8 : "again"
+```
+
+## Case-Insensitive Search
+
+```go
+import "strings"
+
+// Convert both to lowercase before comparing
+for _, q := range query {
+    qLower := strings.ToLower(q)
+    for i, w := range words {
+        wLower := strings.ToLower(w)
+        if qLower == wLower {
+            fmt.Printf("#%-2d: %q\n", i+1, w)
+            break
+        }
+    }
+}
+```
+
+## Count Occurrences
+
+```go
+for _, q := range query {
+    count := 0
+    for _, w := range words {
+        if q == w {
+            count++
+        }
+    }
+    if count > 0 {
+        fmt.Printf("%q appears %d time(s)\n", q, count)
+    } else {
+        fmt.Printf("%q not found\n", q)
+    }
+}
+```
+
+**Output:**
+```
+"again" appears 3 time(s)
+"cat" appears 1 time(s)
+"dog" not found
+```
+
+## Search in File
+
+```go
+import (
+    "io/ioutil"
+    "strings"
+)
+
+func main() {
+    // Read file
+    data, err := ioutil.ReadFile("corpus.txt")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    
+    corpus := string(data)
+    words := strings.Fields(corpus)
+    
+    // Rest of the code...
+}
+```
+
+## Real-World Applications
+
+- **Log analysis** - Search for keywords in log files
+- **Text indexing** - Build simple search engines
+- **Data validation** - Check if required words exist
+- **Code search** - Find variable/function names
+- **Document processing** - Extract specific terms
+
+## Performance Considerations
+
+```go
+// For large corpora, consider:
+
+// 1. Build an index (map)
+index := make(map[string][]int)
+for i, w := range words {
+    index[w] = append(index[w], i)
+}
+
+// 2. Fast lookup
+for _, q := range query {
+    if positions, found := index[q]; found {
+        fmt.Printf("%q found at: %v\n", q, positions)
+    }
+}
+```
+
+This trades memory for speed (O(1) lookup vs O(n) search).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Lucky Number Game" icon="clover" href="/projects/lucky-number-game">
+    Practice loops with randomization
+  </Card>
+  
+  <Card title="Strings Guide" icon="font" href="/data-structures/strings-runes-bytes">
+    Master string operations
+  </Card>
+</CardGroup>

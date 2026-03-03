@@ -1,0 +1,699 @@
+---
+title: "Data Structures Exercises"
+description: "Practice exercises for arrays, slices, maps, and structs in Go"
+---
+
+Master Go's fundamental data structures through comprehensive exercises covering arrays, slices, maps, and structs.
+
+## Arrays
+
+Learn to work with fixed-size arrays and understand their fundamentals.
+
+### Level I - Array Basics
+
+<Accordion title="Declare Empty Arrays">
+**Objective:** Practice array declaration syntax
+
+Declare arrays of different types without initialization.
+
+**Key Concepts:**
+- Array declaration syntax
+- Fixed size requirement
+- Zero values
+
+**Approach:**
+```go
+var numbers [5]int
+var names [3]string
+var prices [10]float64
+```
+</Accordion>
+
+<Accordion title="Get and Set Array Elements">
+**Objective:** Access and modify array elements
+
+Practice indexing arrays to read and write values.
+
+**Key Concepts:**
+- Zero-based indexing
+- Array element access
+- Bounds checking
+
+**Approach:**
+```go
+var arr [3]int
+arr[0] = 10
+arr[1] = 20
+arr[2] = 30
+fmt.Println(arr[1])  // 20
+```
+</Accordion>
+
+<Accordion title="Array Literals">
+**Objective:** Initialize arrays with values
+
+Refactor array declarations to use literal syntax.
+
+**Approach:**
+```go
+// Instead of:
+var arr [3]int
+arr[0] = 1
+arr[1] = 2
+arr[2] = 3
+
+// Use literal:
+arr := [3]int{1, 2, 3}
+```
+</Accordion>
+
+<Accordion title="Ellipsis Arrays">
+**Objective:** Let the compiler count array size
+
+Use `...` to automatically determine array length.
+
+**Approach:**
+```go
+arr := [...]int{1, 2, 3, 4, 5}
+// Compiler determines size is 5
+```
+</Accordion>
+
+<Accordion title="Fix Array Errors">
+**Objective:** Debug common array mistakes
+
+Fix programs with array-related errors.
+
+**Common Issues:**
+- Index out of bounds
+- Type mismatches
+- Size mismatches
+
+**Approach:**
+Read error messages carefully and check array sizes and types.
+</Accordion>
+
+<Accordion title="Compare Arrays">
+**Objective:** Learn array comparison rules
+
+Compare arrays using `==` and `!=` operators.
+
+**Key Concepts:**
+- Arrays are comparable if same type and size
+- Element-wise comparison
+- Array equality
+
+**Approach:**
+```go
+arr1 := [3]int{1, 2, 3}
+arr2 := [3]int{1, 2, 3}
+fmt.Println(arr1 == arr2)  // true
+```
+</Accordion>
+
+<Accordion title="Assign Arrays">
+**Objective:** Copy arrays through assignment
+
+Understand array assignment behavior.
+
+**Key Concepts:**
+- Arrays are value types
+- Assignment creates a copy
+- Changes to copy don't affect original
+
+**Approach:**
+```go
+arr1 := [3]int{1, 2, 3}
+arr2 := arr1  // Copy
+arr2[0] = 10  // arr1 unchanged
+```
+</Accordion>
+
+### Level II - Array Applications
+
+<Accordion title="Wizard Printer">
+**Objective:** Print array elements with formatting
+
+Create a program that formats and prints array data.
+
+**Approach:**
+Loop through an array and print each element with custom formatting.
+</Accordion>
+
+<Accordion title="Currency Converter">
+**Objective:** Use arrays for currency conversion
+
+Store exchange rates in an array and perform conversions.
+
+**Key Concepts:**
+- Parallel arrays
+- Array-based lookups
+- Calculations with arrays
+
+**Approach:**
+1. Create array of currency codes
+2. Create array of exchange rates
+3. Find index and calculate conversion
+</Accordion>
+
+<Accordion title="Hipster's Bookstore Search">
+**Objective:** Search through book data
+
+Build a search engine using arrays for book information.
+
+**Approach:**
+1. Store book titles in an array
+2. Search for matching titles
+3. Display results
+</Accordion>
+
+<Accordion title="Find the Average">
+**Objective:** Calculate array statistics
+
+Compute the average of numbers in an array.
+
+**Approach:**
+```go
+sum := 0
+for _, num := range numbers {
+    sum += num
+}
+average := float64(sum) / float64(len(numbers))
+```
+</Accordion>
+
+<Accordion title="Number Sorter">
+**Objective:** Sort array elements
+
+Implement a sorting algorithm for arrays.
+
+**Approach:**
+- Bubble sort
+- Selection sort
+- Or use the `sort` package
+</Accordion>
+
+<Accordion title="Word Finder">
+**Objective:** Search for words in an array
+
+Find specific words in an array of strings.
+
+**Approach:**
+Loop through array and compare strings.
+</Accordion>
+
+## Slices
+
+Master Go's dynamic slices, the most commonly used sequence type.
+
+### Level I - Slice Basics
+
+<Accordion title="Declare Nil Slices">
+**Objective:** Understand nil slices
+
+Declare slices without initialization.
+
+**Key Concepts:**
+- Nil slice vs empty slice
+- Zero value for slices
+- Checking for nil
+
+**Approach:**
+```go
+var numbers []int
+fmt.Println(numbers == nil)  // true
+```
+</Accordion>
+
+<Accordion title="Empty Slices">
+**Objective:** Create empty but non-nil slices
+
+Initialize slices with zero length but non-nil.
+
+**Approach:**
+```go
+numbers := []int{}
+// or
+numbers := make([]int, 0)
+```
+</Accordion>
+
+<Accordion title="Slice Literals">
+**Objective:** Initialize slices with values
+
+Create slices using literal syntax.
+
+**Approach:**
+```go
+numbers := []int{1, 2, 3, 4, 5}
+names := []string{"Alice", "Bob", "Charlie"}
+```
+</Accordion>
+
+<Accordion title="Arrays to Slices">
+**Objective:** Convert array declarations to slices
+
+Refactor array code to use slices instead.
+
+**Approach:**
+Remove the size specification from array declarations.
+</Accordion>
+
+<Accordion title="Fix Slice Problems">
+**Objective:** Debug slice-related errors
+
+Fix common mistakes when working with slices.
+
+**Common Issues:**
+- Nil pointer dereferences
+- Index out of range
+- Type mismatches
+</Accordion>
+
+<Accordion title="Compare Slices">
+**Objective:** Learn slice comparison limitations
+
+Understand why slices can't be compared with `==`.
+
+**Key Concepts:**
+- Slices are not comparable
+- Use loops or `reflect.DeepEqual`
+- Byte slice exception with `bytes.Equal`
+
+**Approach:**
+```go
+// Error: cannot compare
+// slice1 == slice2
+
+// Correct:
+equal := reflect.DeepEqual(slice1, slice2)
+```
+</Accordion>
+
+### Level II - Appending
+
+<Accordion title="Append and Compare Byte Slices">
+**Objective:** Use append function with byte slices
+
+Practice appending elements and comparing byte slices.
+
+**Key Concepts:**
+- `append()` function
+- Variadic appending
+- `bytes.Equal()` for comparison
+
+**Approach:**
+```go
+slice := []byte{1, 2, 3}
+slice = append(slice, 4, 5)
+```
+</Accordion>
+
+<Accordion title="Append to Nil Slice">
+**Objective:** Understand append behavior with nil
+
+Append to nil slices and observe behavior.
+
+**Approach:**
+```go
+var slice []int
+slice = append(slice, 1, 2, 3)
+// Works fine! Creates new slice
+```
+</Accordion>
+
+<Accordion title="Fix Append Problems">
+**Objective:** Debug append mistakes
+
+Fix programs with incorrect append usage.
+
+**Common Mistakes:**
+- Not assigning append result
+- Incorrect variadic syntax
+- Type mismatches
+</Accordion>
+
+<Accordion title="Append and Sort Numbers">
+**Objective:** Build and sort dynamic lists
+
+Append numbers from input and sort them.
+
+**Approach:**
+```go
+numbers := []int{}
+for _, arg := range os.Args[1:] {
+    num, _ := strconv.Atoi(arg)
+    numbers = append(numbers, num)
+}
+sort.Ints(numbers)
+```
+</Accordion>
+
+<Accordion title="Housing Prices">
+**Objective:** Manage dynamic price data
+
+Store and process housing prices using slices.
+
+**Approach:**
+1. Read prices into a slice
+2. Append new prices
+3. Calculate statistics
+</Accordion>
+
+<Accordion title="Housing Prices with Averages">
+**Objective:** Enhance with statistical analysis
+
+Add average, min, and max calculations.
+
+**Approach:**
+Calculate statistics as you append new prices.
+</Accordion>
+
+### Level III - Slicing Operations
+
+<Accordion title="Slice the Numbers">
+**Objective:** Extract sub-slices
+
+Practice slice expressions to get portions of slices.
+
+**Key Concepts:**
+- Slice syntax `[start:end]`
+- Omitting start or end
+- Full slice expression
+
+**Approach:**
+```go
+numbers := []int{0, 1, 2, 3, 4, 5}
+fmt.Println(numbers[1:4])   // [1 2 3]
+fmt.Println(numbers[:3])    // [0 1 2]
+fmt.Println(numbers[3:])    // [3 4 5]
+```
+</Accordion>
+
+<Accordion title="Slicing by Arguments">
+**Objective:** Dynamic slicing with user input
+
+Use command-line arguments to control slicing.
+
+**Approach:**
+Parse start and end indices from arguments and slice accordingly.
+</Accordion>
+
+<Accordion title="Slicing Housing Prices">
+**Objective:** Extract price ranges
+
+Slice housing price data to analyze specific ranges.
+
+**Approach:**
+Use slicing to get recent prices, price ranges, etc.
+</Accordion>
+
+### Level IV - Slice Internals
+
+<Accordion title="Fix Backing Array Issues">
+**Objective:** Understand shared backing arrays
+
+Fix problems caused by slices sharing backing arrays.
+
+**Key Concepts:**
+- Backing array concept
+- Slice header (pointer, length, capacity)
+- Unintended modifications
+
+**Approach:**
+Use `copy()` or full slice expression to avoid sharing.
+</Accordion>
+
+<Accordion title="Sort Backing Array">
+**Objective:** Observe backing array effects
+
+See how sorting affects related slices.
+
+**Approach:**
+Create multiple slices from one array, sort one, observe others.
+</Accordion>
+
+<Accordion title="Memory Allocations">
+**Objective:** Monitor slice memory behavior
+
+Observe when new backing arrays are allocated.
+
+**Approach:**
+Print capacity and address of backing array during appends.
+</Accordion>
+
+<Accordion title="Length and Capacity">
+**Objective:** Understand len vs cap
+
+Observe how length and capacity change.
+
+**Approach:**
+```go
+slice := make([]int, 3, 5)
+fmt.Println(len(slice))  // 3
+fmt.Println(cap(slice))  // 5
+```
+</Accordion>
+
+<Accordion title="Capacity Growth">
+**Objective:** Watch capacity allocation strategy
+
+Observe how Go grows slice capacity.
+
+**Approach:**
+Append to a slice and print capacity after each append.
+</Accordion>
+
+### Level V - Advanced Operations
+
+<Accordion title="Practice Advanced Slice Operations">
+**Objective:** Master copy, append, and slicing
+
+Warm up with various slice manipulation exercises.
+
+**Operations:**
+- Copying slices
+- Inserting elements
+- Deleting elements
+- Concatenating slices
+</Accordion>
+
+<Accordion title="Limit Backing Array Sharing">
+**Objective:** Control slice exposure
+
+Prevent external code from modifying your slice's backing array.
+
+**Approach:**
+Use full slice expression `[start:end:max]` to limit capacity.
+</Accordion>
+
+<Accordion title="Fix Memory Leak">
+**Objective:** Prevent backing array retention
+
+Fix memory leaks caused by retaining large backing arrays.
+
+**Approach:**
+Use `copy()` to create independent slices when keeping small portions of large slices.
+</Accordion>
+
+<Accordion title="Add Newlines">
+**Objective:** Complex slice manipulation
+
+Insert newlines after sentences using `copy()`.
+
+**Approach:**
+Create a new buffer and copy with insertions.
+</Accordion>
+
+<Accordion title="Print Daily Requests">
+**Objective:** Work with multi-dimensional slices
+
+Group and display data in a 2D slice structure.
+
+**Approach:**
+```go
+requests := make([][]int, days)
+for i := range requests {
+    requests[i] = make([]int, 24)
+}
+```
+</Accordion>
+
+## Maps
+
+Learn Go's built-in hash table type for key-value storage.
+
+<Accordion title="Map Warm Up">
+**Objective:** Create and print maps
+
+Declare and initialize maps of different types.
+
+**Key Concepts:**
+- Map declaration
+- Map initialization
+- Nil maps vs empty maps
+
+**Approach:**
+```go
+// Nil map
+var m map[string]int
+
+// Empty map
+m := map[string]int{}
+
+// With make
+m := make(map[string]int)
+```
+</Accordion>
+
+<Accordion title="Populate and Lookup">
+**Objective:** Add and retrieve map values
+
+Add elements and look them up by key.
+
+**Key Concepts:**
+- Adding key-value pairs
+- Retrieving values
+- Comma-ok idiom
+
+**Approach:**
+```go
+m := make(map[string]int)
+m["age"] = 25
+m["score"] = 100
+
+age, exists := m["age"]
+if exists {
+    fmt.Println(age)
+}
+```
+</Accordion>
+
+<Accordion title="Hogwarts Students">
+**Objective:** Group data with maps
+
+Create a map of Hogwarts houses to student names.
+
+**Key Concepts:**
+- Map of slices
+- Grouping data
+- Map iteration
+
+**Approach:**
+```go
+houses := map[string][]string{
+    "Gryffindor": {"Harry", "Ron", "Hermione"},
+    "Slytherin":  {"Draco", "Crabbe", "Goyle"},
+}
+
+students := houses["Gryffindor"]
+```
+</Accordion>
+
+## Structs
+
+Create custom types to organize related data.
+
+<Accordion title="Struct Warm Up">
+**Objective:** Load data into a game store
+
+Define structs and initialize them with game data.
+
+**Key Concepts:**
+- Struct definition
+- Struct literals
+- Field access
+
+**Approach:**
+```go
+type Game struct {
+    ID    int
+    Name  string
+    Price float64
+}
+
+game := Game{
+    ID:    1,
+    Name:  "Tetris",
+    Price: 9.99,
+}
+```
+</Accordion>
+
+<Accordion title="List Games">
+**Objective:** Build an interactive interface
+
+Add a command-line interface to list games using `bufio.Scanner`.
+
+**Key Concepts:**
+- User input with Scanner
+- Slice of structs
+- Formatting output
+
+**Approach:**
+```go
+scanner := bufio.NewScanner(os.Stdin)
+for scanner.Scan() {
+    cmd := scanner.Text()
+    if cmd == "list" {
+        // Print all games
+    }
+}
+```
+</Accordion>
+
+<Accordion title="Query by ID">
+**Objective:** Search for specific games
+
+Add ID-based game lookup functionality.
+
+**Approach:**
+1. Parse ID from input
+2. Search through game slice
+3. Display matching game
+</Accordion>
+
+<Accordion title="Encode to JSON">
+**Objective:** Serialize struct data
+
+Convert game data to JSON format.
+
+**Key Concepts:**
+- `encoding/json` package
+- `json.Marshal()`
+- Struct tags
+
+**Approach:**
+```go
+type Game struct {
+    ID    int    `json:"id"`
+    Name  string `json:"name"`
+    Price float64 `json:"price"`
+}
+
+data, err := json.Marshal(games)
+```
+</Accordion>
+
+<Accordion title="Decode from JSON">
+**Objective:** Load data from JSON
+
+Parse JSON data into struct instances.
+
+**Approach:**
+```go
+var games []Game
+err := json.Unmarshal(data, &games)
+```
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Functions" icon="function" href="/exercises/functions">
+    Learn to organize code with functions
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/exercises/getting-started">
+    Review the basics
+  </Card>
+</CardGroup>

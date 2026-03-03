@@ -1,0 +1,417 @@
+---
+title: "Frequently Asked Questions"
+description: "Common questions about the Learn Go course and Go programming"
+icon: "question"
+---
+
+## Getting Started
+
+### What is Learn Go?
+
+Learn Go is a comprehensive, free educational resource containing thousands of Go examples, exercises, and quizzes. Originally created for the [Go Bootcamp Course](https://www.udemy.com/course/learn-go-the-complete-bootcamp-course-golang/?referralCode=5CE6EB34E2B1EF4A7D37) on Udemy, it's now available to everyone as an open-source project.
+
+### Do I need prior programming experience?
+
+While having some programming experience helps, the course is designed to teach Go from the ground up. If you're completely new to programming, you may want to start with basic programming concepts first, but you can still follow along with patience.
+
+### What version of Go should I use?
+
+The course materials are updated for modern Go (Go 1.13+). We recommend using the latest stable version of Go. You can check your version with:
+
+```bash
+go version
+```
+
+### How is the course structured?
+
+The course is organized into numbered sections (01, 02, etc.), each focusing on a specific topic:
+
+- **01-26**: Core Go concepts (basics through pointers)
+- **Projects**: Hands-on projects applying multiple concepts
+- **Interfaces**: Advanced interface concepts
+- **Advanced topics**: Concurrency, advanced functions, etc.
+
+<Tip>
+Follow the sections in order, as they build on previous concepts.
+</Tip>
+
+## Installation and Setup
+
+### How do I install Go?
+
+<Steps>
+  <Step title="Download Go">
+    Visit [go.dev/dl](https://go.dev/dl) and download the installer for your operating system.
+  </Step>
+  
+  <Step title="Run the installer">
+    Follow the installation instructions for your platform.
+  </Step>
+  
+  <Step title="Verify installation">
+    ```bash
+    go version
+    ```
+  </Step>
+  
+  <Step title="Set up your workspace">
+    Create a directory for your Go projects and set `GOPATH` if needed (not required in modern Go).
+  </Step>
+</Steps>
+
+### What IDE should I use?
+
+Popular choices include:
+
+- **Visual Studio Code** with the Go extension (recommended for beginners)
+- **GoLand** by JetBrains (full-featured IDE)
+- **Vim/Neovim** with vim-go (for experienced vim users)
+- **Any text editor** - Go's tooling works from the command line
+
+### Do I need to set GOPATH?
+
+With Go modules (Go 1.11+), `GOPATH` is less critical. You can work on projects anywhere on your system. The course materials use modules, so you don't need to worry about `GOPATH` for most examples.
+
+## Learning and Progress
+
+### How long does it take to complete the course?
+
+It varies by individual:
+- **Fast track**: 2-3 weeks of intensive study
+- **Normal pace**: 1-3 months with regular practice
+- **Leisurely**: 3-6 months learning alongside other commitments
+
+<Info>
+The key is consistent practice, not speed. Understanding concepts thoroughly is more important than rushing through.
+</Info>
+
+### Should I do all the exercises?
+
+Yes! Exercises are crucial for learning. The course philosophy is "learning by doing." Even if you feel you understand a concept, doing the exercise reinforces it and reveals gaps in understanding.
+
+### I'm stuck on an exercise. What should I do?
+
+<Steps>
+  <Step title="Review the section material">
+    Re-read the relevant section and examples.
+  </Step>
+  
+  <Step title="Break down the problem">
+    Divide the exercise into smaller steps.
+  </Step>
+  
+  <Step title="Check the hints">
+    Some exercises include hints files.
+  </Step>
+  
+  <Step title="Try writing pseudocode">
+    Plan your approach before coding.
+  </Step>
+  
+  <Step title="Look at the solution">
+    If truly stuck, check the solution folder, but try to understand it rather than just copying.
+  </Step>
+</Steps>
+
+### Can I skip sections?
+
+While you can jump around, we recommend following the order as each section builds on previous ones. If you have prior programming experience, you might move faster through early sections, but don't skip them entirely.
+
+## Language-Specific Questions
+
+### Why does Go not allow unused variables?
+
+From the course materials: Go enforces code cleanliness by not allowing unused variables. This prevents clutter and potential bugs. It's a deliberate design decision to keep code maintainable.
+
+```go
+// This won't compile
+func main() {
+    name := "Alice"
+    // Error: name declared but not used
+}
+```
+
+### What's the difference between `:=` and `=`?
+
+<CodeGroup>
+```go Short Declaration :=
+// Declares and initializes a NEW variable
+name := "Alice"
+```
+
+```go Assignment =
+// Assigns to EXISTING variable
+var name string
+name = "Alice"
+```
+</CodeGroup>
+
+<Warning>
+Common mistake: Using `:=` in a child scope creates a new variable instead of assigning to the parent scope's variable.
+</Warning>
+
+### Why can't I compare slices with `==`?
+
+Slices, maps, and functions are not comparable in Go. This is because they contain references to underlying data structures. Use `reflect.DeepEqual()` if you need to compare slices:
+
+```go
+import "reflect"
+
+a := []int{1, 2, 3}
+b := []int{1, 2, 3}
+
+if reflect.DeepEqual(a, b) {
+    fmt.Println("equal")
+}
+```
+
+### When should I use pointers?
+
+Use pointers when:
+- You need to modify the value (from course examples: pointers/01-pointers)
+- The struct is large (avoid copying)
+- You need to share state between functions
+
+Use values when:
+- The data is small
+- You want independence/immutability
+- Thread safety matters
+
+### What's the difference between `nil` and zero values?
+
+From the course:
+- **Zero values**: Default values for types (`0` for int, `""` for string, `false` for bool)
+- **nil**: Zero value for pointers, slices, maps, channels, functions, and interfaces - represents "no value" or "uninitialized"
+
+```go
+var num int        // 0 (zero value)
+var ptr *int       // nil (zero value for pointers)
+var slice []int    // nil (zero value for slices)
+```
+
+## Project Questions
+
+### What are the projects for?
+
+Projects like "Retro LED Clock," "Bouncing Ball," and "Tic-Tac-Toe" integrate multiple concepts from previous sections. They help you:
+- Apply knowledge in a realistic context
+- See how concepts work together
+- Build something tangible and fun
+
+### Should I look at the solution if I'm stuck on a project?
+
+Try these steps first:
+1. Review concepts used in the project
+2. Break the project into smaller tasks
+3. Implement one feature at a time
+4. Check earlier examples for similar patterns
+
+If still stuck after genuine effort, looking at the solution is fine - but make sure to understand it, not just copy it.
+
+## Testing and Exercises
+
+### How do I run tests?
+
+```bash
+# Run tests in current directory
+go test
+
+# Run all tests in the project
+go test ./...
+
+# Run tests with verbose output
+go test -v
+```
+
+### What's a "table-driven test"?
+
+From the course examples (tictactoe, etc.), table-driven tests are the idiomatic Go way to write tests:
+
+```go
+func TestSomething(t *testing.T) {
+    tests := []struct {
+        name string
+        input int
+        want int
+    }{
+        {"case 1", 1, 2},
+        {"case 2", 2, 4},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got := double(tt.input)
+            if got != tt.want {
+                t.Errorf("got %d, want %d", got, tt.want)
+            }
+        })
+    }
+}
+```
+
+## Advanced Topics
+
+### When should I learn about goroutines and channels?
+
+After you're comfortable with the basics (sections 01-26). Concurrency is powerful but builds on fundamental concepts. Trying to learn it too early can be overwhelming.
+
+### What about generics?
+
+Go added generics in Go 1.18. The core course materials were created before generics, but the fundamental concepts still apply. Generics are an advanced topic to explore after mastering the basics.
+
+### How do I learn the Go standard library?
+
+The course introduces standard library packages as needed. To dive deeper:
+1. Read the [official documentation](https://pkg.go.dev/std)
+2. Explore source code of packages you use
+3. Build projects that use different packages
+4. Read the [Effective Go](https://go.dev/doc/effective_go) guide
+
+## Course Materials
+
+### Can I use these materials for teaching?
+
+Yes! The materials are licensed under [Creative Commons Attribution-NonCommercial-ShareAlike 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). You can use them for non-commercial teaching, as long as you give credit and share your adaptations under the same license.
+
+### Are there translations available?
+
+Yes, translations are in progress:
+- **Spanish**: Work in progress (`translation/spanish`)
+- **Chinese**: Work in progress (`translation/chinese`)
+
+Want to help translate? See the [Contributing Guide](/community/contributing).
+
+### I found a typo/error. How do I report it?
+
+Please [open an issue on GitHub](https://github.com/inancgumus/learngo/issues) with:
+- Location (file path and line number)
+- Description of the error
+- Suggested fix (if you have one)
+
+Even better, submit a pull request with the fix! See [Contributing](/community/contributing).
+
+## Common Errors
+
+### "declared but not used"
+
+Go doesn't allow unused variables or imports. Either use them or remove them:
+
+```go
+// Remove unused variables
+func main() {
+    // name := "Alice"  // Remove this
+    fmt.Println("Hello")
+}
+
+// Or use the blank identifier for intentionally unused values
+_, err := doSomething()  // Ignore first return value
+```
+
+### "cannot use X (type Y) as type Z"
+
+Go requires explicit type conversion:
+
+```go
+// Wrong
+var age int = 10
+var height float64 = age  // Error!
+
+// Correct
+var age int = 10
+var height float64 = float64(age)  // Explicit conversion
+```
+
+### "index out of range"
+
+Check array/slice length before accessing:
+
+```go
+slice := []int{1, 2, 3}
+
+// Wrong
+value := slice[5]  // Panic!
+
+// Correct
+if index < len(slice) {
+    value := slice[index]
+}
+```
+
+See more in the [Troubleshooting Guide](/reference/troubleshooting).
+
+## Community and Support
+
+### Where can I ask questions?
+
+- **GitHub Issues**: For bugs and problems with course materials
+- **Course Community**: For learning questions and discussion
+- **Twitter**: [@inancgumus](https://twitter.com/inancgumus) for quick questions
+- **Stack Overflow**: Tag questions with `go` and `golang`
+
+### How can I contribute?
+
+See the [Contributing Guide](/community/contributing) for detailed information. Contributions of all kinds are welcome:
+- Fix typos or bugs
+- Add examples or exercises
+- Improve documentation
+- Translate content
+
+### Is there a community forum or Discord?
+
+Check the course materials for current community links. The Learn Go ecosystem is primarily centered around:
+- GitHub repository
+- Twitter community
+- Udemy course (if enrolled)
+
+## Career and Next Steps
+
+### Is this course enough to get a Go job?
+
+This course provides a strong foundation, but getting job-ready typically requires:
+1. Completing this course thoroughly
+2. Building several projects
+3. Learning Go-specific technologies (frameworks, databases, etc.)
+4. Understanding Go best practices and idioms
+5. Contributing to open source projects
+
+### What should I learn after this course?
+
+Next steps:
+- **Web development**: Frameworks like Gin, Echo, or Fiber
+- **Databases**: Learn to use SQL and NoSQL with Go
+- **Testing**: Deep dive into testing strategies
+- **Concurrency**: Master goroutines and channels
+- **System programming**: Build CLI tools, APIs, microservices
+- **Cloud**: Deploy Go applications to cloud platforms
+
+### Are there more advanced resources?
+
+Yes! Check out:
+- [Go by Example book](https://github.com/inancgumus/gobyexample) by the course author
+- [Effective Go](https://go.dev/doc/effective_go) official guide
+- [Blog](https://blog.learngoprogramming.com) with in-depth articles
+- [YouTube channel](https://www.youtube.com/channel/UCYxepZhtnFIVRh8t5H_QAdg) for video tutorials
+
+## Still Have Questions?
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" href="/reference/troubleshooting" icon="wrench">
+    Common issues and solutions
+  </Card>
+  
+  <Card title="Best Practices" href="/reference/best-practices" icon="star">
+    Go best practices guide
+  </Card>
+  
+  <Card title="Contributing" href="/community/contributing" icon="code-pull-request">
+    How to contribute
+  </Card>
+  
+  <Card title="GitHub Issues" icon="github" href="https://github.com/inancgumus/learngo/issues">
+    Ask on GitHub
+  </Card>
+</CardGroup>
+
+<Info>
+Remember: Every expert was once a beginner. Keep practicing, stay curious, and don't be afraid to ask questions!
+</Info>

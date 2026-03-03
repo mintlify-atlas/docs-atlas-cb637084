@@ -1,0 +1,369 @@
+---
+title: Empty File Finder
+description: Find and report empty files in directories using file I/O
+icon: folder-open
+---
+
+Build a command-line tool that scans a directory, finds all empty files, and optionally writes them to an output file.
+
+## What You'll Build
+
+A utility program that:
+- Accepts a directory path as a command-line argument
+- Scans all files in that directory
+- Identifies files with zero size
+- Prints the names of empty files
+- Optionally writes results to a file
+- Optimizes memory usage with proper slice allocation
+
+## What You'll Learn
+
+- Reading directory contents with `ioutil.ReadDir`
+- Working with file metadata (size, name, etc.)
+- Writing data to files
+- Slice capacity optimization
+- Error handling for file operations
+- Byte slice manipulation
+
+## Step-by-Step Approach
+
+<Steps>
+  <Step title="Fetch the Files">
+    Read the directory and find empty files.
+    
+    ```go
+    package main
+
+    import (
+        "fmt"
+        "io/ioutil"
+        "os"
+    )
+
+    func main() {
+        args := os.Args[1:]
+        if len(args) == 0 {
+            fmt.Println("Provide a directory")
+            return
+        }
+
+        // Read all files in the directory
+        files, err := ioutil.ReadDir(args[0])
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+
+        // Find and print empty files
+        for _, file := range files {
+            if file.Size() == 0 {
+                name := file.Name()
+                fmt.Println(name)
+            }
+        }
+    }
+    ```
+    
+    **Tasks:**
+    - Check for command-line arguments
+    - Read directory contents
+    - Identify empty files (size == 0)
+    - Print their names
+  </Step>
+  
+  <Step title="Write to a File">
+    Store the empty file names in an output file.
+    
+    ```go
+    // Create a byte slice to store names
+    var names []byte
+
+    for _, file := range files {
+        if file.Size() == 0 {
+            name := file.Name()
+            
+            // Append filename to slice
+            names = append(names, name...)
+            names = append(names, '\n')  // Add newline
+        }
+    }
+
+    // Write to file
+    err = ioutil.WriteFile("out.txt", names, 0644)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    // Also print to console
+    fmt.Printf("%s", names)
+    ```
+    
+    **Tasks:**
+    - Create a byte slice for output
+    - Append filenames with newlines
+    - Write to a file with proper permissions
+    - Print the results
+  </Step>
+  
+  <Step title="Optimize Memory Usage">
+    Pre-allocate the slice to avoid multiple reallocations.
+    
+    ```go
+    // Calculate total size needed
+    var total int
+    for _, file := range files {
+        if file.Size() == 0 {
+            // +1 for the newline character
+            total += len(file.Name()) + 1
+        }
+    }
+    fmt.Printf("Total required space: %d bytes.\n", total)
+
+    // Allocate slice with exact capacity
+    names := make([]byte, 0, total)
+
+    // Now append without reallocations
+    for _, file := range files {
+        if file.Size() == 0 {
+            name := file.Name()
+            names = append(names, name...)
+            names = append(names, '\n')
+        }
+    }
+    ```
+    
+    **Why optimize?**
+    - Reduces memory allocations
+    - Improves performance
+    - Avoids slice capacity doubling overhead
+  </Step>
+</Steps>
+
+## Complete Example
+
+```go
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+)
+
+func main() {
+	args := os.Args[1:]
+	if len(args) == 0 {
+		fmt.Println("Provide a directory")
+		return
+	}
+
+	files, err := ioutil.ReadDir(args[0])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Calculate total size for optimization
+	var total int
+	for _, file := range files {
+		if file.Size() == 0 {
+			// +1 for newline
+			total += len(file.Name()) + 1
+		}
+	}
+	fmt.Printf("Total required space: %d bytes.\n", total)
+
+	// Pre-allocate with exact capacity
+	names := make([]byte, 0, total)
+
+	for _, file := range files {
+		if file.Size() == 0 {
+			name := file.Name()
+			names = append(names, name...)
+			names = append(names, '\n')
+		}
+	}
+
+	err = ioutil.WriteFile("out.txt", names, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%s", names)
+}
+```
+
+## Running the Program
+
+```bash
+# Create some test files
+mkdir test_dir
+touch test_dir/empty1.txt
+touch test_dir/empty2.txt
+echo "content" > test_dir/nonempty.txt
+
+# Run the program
+go run main.go test_dir
+```
+
+**Output:**
+```
+Total required space: 22 bytes.
+empty1.txt
+empty2.txt
+```
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="Reading Directories">
+    ```go
+    import "io/ioutil"
+    
+    // Returns a slice of FileInfo
+    files, err := ioutil.ReadDir("/path/to/dir")
+    if err != nil {
+        // Handle error
+    }
+    
+    // Each file has methods:
+    for _, file := range files {
+        name := file.Name()     // File name
+        size := file.Size()     // Size in bytes
+        isDir := file.IsDir()   // Is it a directory?
+        mode := file.Mode()     // File permissions
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Writing Files">
+    ```go
+    data := []byte("Hello, World!\n")
+    
+    // WriteFile creates or truncates the file
+    err := ioutil.WriteFile("output.txt", data, 0644)
+    
+    // File permissions (Unix):
+    // 0644 = rw-r--r--
+    // Owner: read+write
+    // Group: read
+    // Others: read
+    ```
+    
+    See [Unix file permissions](https://www.tutorialspoint.com/unix/unix-file-permission.htm) for more info.
+  </Accordion>
+  
+  <Accordion title="Slice Capacity Optimization">
+    ```go
+    // Without pre-allocation (inefficient)
+    var slice []byte
+    for i := 0; i < 1000; i++ {
+        slice = append(slice, 'x')  // May reallocate many times
+    }
+    
+    // With pre-allocation (efficient)
+    slice := make([]byte, 0, 1000)
+    for i := 0; i < 1000; i++ {
+        slice = append(slice, 'x')  // No reallocations needed
+    }
+    ```
+    
+    Check capacity with `cap(slice)`.
+  </Accordion>
+  
+  <Accordion title="String to Byte Conversion">
+    ```go
+    str := "hello"
+    
+    // Convert string to []byte
+    bytes := []byte(str)
+    
+    // Append string to []byte slice
+    var slice []byte
+    slice = append(slice, str...)  // ... unpacks the string
+    
+    // Convert []byte to string
+    str2 := string(bytes)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## File Permission Reference
+
+```go
+// Common Unix file permissions:
+0644  // -rw-r--r--  (typical file)
+0755  // -rwxr-xr-x  (executable)
+0600  // -rw-------  (private file)
+0666  // -rw-rw-rw-  (world writable)
+```
+
+Use a [permissions calculator](http://permissions-calculator.org/) to understand them better.
+
+## Error Handling
+
+<CodeGroup>
+```go Directory Doesn't Exist
+files, err := ioutil.ReadDir("/nonexistent")
+if err != nil {
+    fmt.Println(err)
+    // Output: open /nonexistent: no such file or directory
+    return
+}
+```
+
+```go Permission Denied
+err := ioutil.WriteFile("/root/out.txt", data, 0644)
+if err != nil {
+    fmt.Println(err)
+    // Output: open /root/out.txt: permission denied
+    return
+}
+```
+
+```go Missing Arguments
+args := os.Args[1:]
+if len(args) == 0 {
+    fmt.Println("Provide a directory")
+    return
+}
+```
+</CodeGroup>
+
+## Enhancements to Try
+
+1. **Recursive search** - Search subdirectories too
+2. **File filters** - Find files by extension or pattern
+3. **Size threshold** - Find files smaller than N bytes
+4. **Delete option** - Ask to delete empty files
+5. **Statistics** - Show total files, empty files, space saved
+6. **JSON output** - Export results in JSON format
+7. **Colored output** - Highlight empty files in red
+
+## Practice Exercises
+
+Try extending the program:
+
+1. **Count Files** - Display total count of empty vs non-empty files
+2. **Filter by Extension** - Only check specific file types
+3. **Largest Files** - Also report the largest files found
+4. **Timestamps** - Include file modification times
+5. **Interactive Mode** - Ask before writing to output file
+
+<Warning>
+**Security Note:** Be careful when automatically deleting files. Always confirm with the user first!
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spam Masker" icon="mask" href="/projects/spam-masker">
+    Work with byte manipulation
+  </Card>
+  
+  <Card title="File I/O Guide" icon="file" href="/data-structures/slices">
+    Learn more about file operations
+  </Card>
+</CardGroup>

@@ -1,0 +1,419 @@
+---
+title: "Strings, Runes, and Bytes"
+description: "Understand Go's text representation - strings, runes, and bytes, and how to work with Unicode"
+---
+
+## The Three Types
+
+Go represents text using three related but distinct types:
+
+<CardGroup cols={3}>
+  <Card title="string" icon="quotes">
+    Read-only sequence of bytes. Typically UTF-8 encoded text.
+  </Card>
+  <Card title="rune" icon="font">
+    A Unicode code point. Alias for `int32`. Represents a single character.
+  </Card>
+  <Card title="byte" icon="binary">
+    A single byte. Alias for `uint8`. The building block of strings.
+  </Card>
+</CardGroup>
+
+## Strings
+
+A string is a **read-only slice of bytes**. In Go, strings are typically UTF-8 encoded:
+
+```go
+str := "hey"
+
+// Strings are immutable - you cannot modify them
+// str[0] = 'H'  // ❌ Compile error: cannot assign to str[0]
+
+// Get length in bytes
+fmt.Println(len(str))  // 3
+
+// Access individual bytes
+fmt.Printf("%c\n", str[0])  // 'h'
+fmt.Printf("%c\n", str[1])  // 'e'
+fmt.Printf("%c\n", str[2])  // 'y'
+```
+
+<Warning>
+`len()` returns the number of **bytes**, not the number of characters. For Unicode strings, these can differ!
+</Warning>
+
+### Unicode and Multi-Byte Characters
+
+```go
+str := "Yūgen ☯ 💀"
+
+fmt.Println(len(str))  // 17 bytes (not 10 characters!)
+
+// To get the number of characters (runes)
+import "unicode/utf8"
+
+runeCount := utf8.RuneCountInString(str)
+fmt.Println(runeCount)  // 10 runes
+```
+
+## Bytes
+
+Bytes are the raw building blocks. A `byte` is an alias for `uint8`:
+
+```go
+// String to bytes
+str := "hey"
+bytes := []byte(str)
+fmt.Printf("%d\n", bytes)  // [104 101 121]
+
+// Bytes to string
+bytes := []byte{104, 101, 121}
+str := string(bytes)
+fmt.Println(str)  // "hey"
+```
+
+### Working with Byte Slices
+
+```go
+str := "Yūgen ☯ 💀"
+
+// Convert to bytes
+bytes := []byte(str)
+
+// You CAN modify byte slices (unlike strings)
+bytes[0] = 'N'
+bytes[1] = 'o'
+
+// Convert back to string
+str = string(bytes)
+fmt.Println(str)  // "Nogen ☯ 💀"
+```
+
+### Byte Representation
+
+```go
+bytes := []byte("Yūgen ☯ 💀")
+fmt.Printf("% x\n", bytes)
+// Output (in hex): 59 c5 ab 67 65 6e 20 e2 98 af 20 f0 9f 92 80
+
+// Note: Some characters take multiple bytes:
+// 'Y' = 59 (1 byte)
+// 'ū' = c5 ab (2 bytes)
+// '☯' = e2 98 af (3 bytes)
+// '💀' = f0 9f 92 80 (4 bytes)
+```
+
+## Runes
+
+A rune represents a Unicode code point. Rune is an alias for `int32`:
+
+```go
+// Rune literals use single quotes
+var r rune = 'h'
+fmt.Printf("%c = %d\n", r, r)  // h = 104
+```
+
+### Rune Literals are Typeless
+
+Rune literals can be assigned to any numeric type:
+
+```go
+var anInt   int   = 'h'
+var anInt8  int8  = 'h'
+var anInt16 int16 = 'h'
+var anInt32 int32 = 'h'
+var aRune   rune  = 'h'  // rune is alias for int32
+
+fmt.Printf("%T %T %T %T %T\n", anInt, anInt8, anInt16, anInt32, aRune)
+// Output: int int8 int16 int32 int32
+```
+
+### Rune Representations
+
+The same rune can be written in different formats:
+
+```go
+// All represent the same rune 'h'
+fmt.Printf("%q in decimal: %[1]d\n", 104)      // 'h' in decimal: 104
+fmt.Printf("%q in binary : %08[1]b\n", 'h')    // 'h' in binary : 01101000
+fmt.Printf("%q in hex    : 0x%[1]x\n", 0x68)   // 'h' in hex    : 0x68
+```
+
+### String to Runes
+
+Convert strings to rune slices to work with individual characters:
+
+```go
+str := "Yūgen ☯ 💀"
+
+// Convert to runes
+runes := []rune(str)
+
+fmt.Println(len(runes))     // 10 (number of characters)
+fmt.Printf("%c\n", runes[0]) // 'Y'
+fmt.Printf("%c\n", runes[1]) // 'ū'
+fmt.Printf("%c\n", runes[6]) // '☯'
+fmt.Printf("%c\n", runes[8]) // '💀'
+
+// Access multi-character sequences
+fmt.Printf("%c\n", runes[:5])  // [Y ū g e n]
+```
+
+<Note>
+**Trade-off**: Rune slices use 4 bytes per character (fixed size), while UTF-8 strings use 1-4 bytes per character (variable size). Rune slices offer easy indexing; strings save memory.
+</Note>
+
+## Converting Between Types
+
+```go
+str := "hey"
+
+// String ↔ Bytes
+bytes := []byte(str)
+str = string(bytes)
+
+// String ↔ Runes
+runes := []rune(str)
+str = string(runes)
+
+// Character codes
+fmt.Printf("%c : %d\n", 'h', 'h')  // h : 104
+fmt.Printf("%c : %d\n", 'e', 'e')  // e : 101
+fmt.Printf("%c : %d\n", 'y', 'y')  // y : 121
+```
+
+## Indexing Strings
+
+### Byte Indexing
+
+Direct indexing gives you bytes, not characters:
+
+```go
+str := "Yūgen ☯ 💀"
+
+// Accessing by index gives bytes
+fmt.Printf("1st byte: %c\n", str[0])  // 'Y' - works (1 byte char)
+fmt.Printf("2nd byte: %c\n", str[1])  // 'Å' - wrong! (mid-character)
+
+// Correct: use slicing for multi-byte characters
+fmt.Printf("2nd rune: %s\n", str[1:3])  // "ū" (2 bytes)
+```
+
+### Safe Character Access
+
+For multi-byte characters, use rune slices or iteration:
+
+```go
+word := "öykü"
+
+// Wrong: byte indexing
+fmt.Printf("%c\n", word[0])  // 'Ã' - wrong (first byte of ö)
+
+// Correct: rune conversion
+runes := []rune(word)
+fmt.Printf("%c\n", runes[0])  // 'ö' - correct
+
+// Or use slicing with correct byte positions
+fmt.Printf("%s\n", word[:2])   // "ö" (2 bytes)
+fmt.Printf("%c\n", word[2])    // 'y' (1 byte)
+fmt.Printf("%c\n", word[3])    // 'k' (1 byte)
+fmt.Printf("%s\n", word[4:])   // "ü" (2 bytes)
+```
+
+## Iterating Over Strings
+
+### Range Loop (Automatic Rune Decoding)
+
+The `for range` loop automatically decodes runes:
+
+```go
+str := "Yūgen ☯ 💀"
+
+for i, r := range str {
+    fmt.Printf("str[%2d] = %q\n", i, r)
+}
+
+// Output:
+// str[ 0] = 'Y'
+// str[ 1] = 'ū'
+// str[ 3] = 'g'
+// str[ 4] = 'e'
+// str[ 5] = 'n'
+// str[ 6] = ' '
+// str[ 7] = '☯'
+// str[10] = ' '
+// str[11] = '💀'
+```
+
+<Note>
+Notice the index jumps! The index is the **byte position**, not the rune position.
+</Note>
+
+### Manual Rune Decoding
+
+Use `utf8.DecodeRuneInString()` for manual control:
+
+```go
+import "unicode/utf8"
+
+str := "öykü"
+
+// Decode first rune
+r, size := utf8.DecodeRuneInString(str)
+fmt.Printf("rune: %c size: %d bytes\n", r, size)
+// Output: rune: ö size: 2 bytes
+
+// Decode all runes manually
+for i := 0; i < len(str); {
+    r, size := utf8.DecodeRuneInString(str[i:])
+    fmt.Printf("%c", r)
+    i += size
+}
+fmt.Println()
+```
+
+## Practical Examples
+
+### Example 1: Character Counting
+
+```go
+text := "Hello, 世界"
+
+// Byte count
+fmt.Printf("%d bytes\n", len(text))  // 13 bytes
+
+// Rune (character) count
+runeCount := utf8.RuneCountInString(text)
+fmt.Printf("%d runes\n", runeCount)  // 9 characters
+```
+
+### Example 2: String Manipulation
+
+```go
+word := "öykü"
+
+// Convert to runes for easy manipulation
+runes := []rune(word)
+
+// Uppercase first letter (conceptual - use unicode package for real uppercasing)
+runes[0] = 'Ö'
+
+// Convert back to string
+result := string(runes)
+fmt.Println(result)  // "Öykü"
+```
+
+### Example 3: Checking for Turkish Characters
+
+```go
+func hasTurkishChars(s string) bool {
+    turkishChars := "çÇğĞıİöÖşŞüÜ"
+    for _, r := range s {
+        if strings.ContainsRune(turkishChars, r) {
+            return true
+        }
+    }
+    return false
+}
+
+fmt.Println(hasTurkishChars("hello"))  // false
+fmt.Println(hasTurkishChars("öykü"))   // true
+```
+
+## Memory Comparison
+
+```go
+import "unsafe"
+
+str := "Yūgen ☯ 💀"
+
+// As string (UTF-8): variable bytes per character
+bytes := []byte(str)
+fmt.Printf("String: %d bytes\n", len(bytes))  // 17 bytes
+
+// As runes: 4 bytes per character (fixed)
+runes := []rune(str)
+runeBytes := int(unsafe.Sizeof(runes[0])) * len(runes)
+fmt.Printf("Runes : %d bytes\n", runeBytes)   // 40 bytes (10 runes × 4)
+```
+
+<Tip>
+**Use strings (UTF-8) when:**
+- Memory efficiency is important
+- Working with mostly ASCII text
+- Reading/writing data
+
+**Use rune slices when:**
+- Need random access to characters
+- Character-by-character manipulation
+- Character counting is critical
+</Tip>
+
+## Common String Operations
+
+### Length Operations
+
+```go
+str := "Yūgen ☯ 💀"
+
+// Byte length
+fmt.Println(len(str))  // 17
+
+// Rune (character) length
+fmt.Println(utf8.RuneCountInString(str))  // 10
+
+// On byte slice
+bytes := []byte(str)
+fmt.Println(len(bytes))           // 17 (bytes)
+fmt.Println(utf8.RuneCount(bytes)) // 10 (runes)
+```
+
+### String Building
+
+For efficient string building, use `strings.Builder`:
+
+```go
+import "strings"
+
+var builder strings.Builder
+
+builder.WriteString("Hello")
+builder.WriteString(" ")
+builder.WriteString("World")
+
+result := builder.String()
+fmt.Println(result)  // "Hello World"
+```
+
+## Key Takeaways
+
+<AccordionGroup>
+  <Accordion title="Strings are Immutable">
+    You cannot modify a string directly. Convert to `[]byte` or `[]rune` for modifications.
+  </Accordion>
+  
+  <Accordion title="UTF-8 Encoding">
+    Go strings are UTF-8 encoded by default. Characters can take 1-4 bytes.
+  </Accordion>
+  
+  <Accordion title="len() Returns Bytes">
+    `len(string)` returns the number of bytes, not characters. Use `utf8.RuneCountInString()` for character count.
+  </Accordion>
+  
+  <Accordion title="Range Loop Decodes Runes">
+    `for range` over a string automatically decodes UTF-8 runes, but gives byte positions as index.
+  </Accordion>
+  
+  <Accordion title="Three Representations">
+    - `string`: immutable, UTF-8, memory-efficient
+    - `[]byte`: mutable, raw bytes, 1 byte each
+    - `[]rune`: mutable, Unicode code points, 4 bytes each
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Arrays](/data-structures/arrays) - Fixed-size byte/rune arrays
+- [Slices](/data-structures/slices) - Dynamic byte/rune slices
+- [Strings Package](https://pkg.go.dev/strings) - Standard library string utilities
+- [Unicode Package](https://pkg.go.dev/unicode/utf8) - UTF-8 encoding/decoding

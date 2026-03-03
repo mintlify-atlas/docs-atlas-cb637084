@@ -1,0 +1,313 @@
+---
+title: Retro LED Clock
+description: Build an animated ASCII art clock with arrays and time formatting
+icon: clock
+---
+
+Create a retro-style LED clock that displays the current time using ASCII art and animates in real-time.
+
+## What You'll Build
+
+An animated terminal clock that:
+- Displays the current time using LED-style ASCII art
+- Updates every second
+- Shows hours, minutes, and seconds
+- Includes blinking separators (bonus feature)
+- Clears and redraws smoothly
+
+## What You'll Learn
+
+- Working with arrays and multi-dimensional data structures
+- Using the `time` package to get and format time
+- Creating animations in the terminal
+- Screen clearing and cursor control
+- Type definitions for code organization
+- Infinite loops with `for`
+
+## Step-by-Step Approach
+
+<Steps>
+  <Step title="Print the Digits">
+    Create ASCII art representations of digits 0-9 and print them side-by-side.
+    
+    ```go
+    // Define a placeholder type for LED digits
+    type placeholder [5]string
+    
+    // Create digit 0
+    zero := placeholder{
+        "███",
+        "█ █",
+        "█ █",
+        "█ █",
+        "███",
+    }
+    
+    // Create digits 1-9...
+    // Put them all in a digits array
+    digits := [10]placeholder{
+        zero, one, two, three, four,
+        five, six, seven, eight, nine,
+    }
+    ```
+    
+    **Tasks:**
+    - Define a new placeholder type
+    - Create digit arrays from 0 to 9
+    - Store them in a "digits" array
+    - Print them side-by-side
+  </Step>
+  
+  <Step title="Print the Clock">
+    Get the current time and display it using your LED digits.
+    
+    ```go
+    // Get the current time
+    now := time.Now()
+    hour, min, sec := now.Hour(), now.Minute(), now.Second()
+    
+    // Create the clock array with separators
+    clock := [8]placeholder{
+        digits[hour/10], digits[hour%10],
+        separator,
+        digits[min/10], digits[min%10],
+        separator,
+        digits[sec/10], digits[sec%10],
+    }
+    
+    // Print the clock
+    for line := 0; line < 5; line++ {
+        for _, digit := range clock {
+            fmt.Print(digit[line], "  ")
+        }
+        fmt.Println()
+    }
+    ```
+    
+    **Tasks:**
+    - Get the current time using `time.Now()`
+    - Extract hours, minutes, and seconds
+    - Create the clock array
+    - Add separator characters (like ":")
+  </Step>
+  
+  <Step title="Animate the Clock">
+    Make the clock update every second.
+    
+    ```go
+    import "github.com/inancgumus/screen"
+    
+    // Clear the screen once
+    screen.Clear()
+    
+    // Infinite loop to update the clock
+    for {
+        // Move cursor to top-left
+        screen.MoveTopLeft()
+        
+        // Get current time and display
+        // ... (clock drawing code)
+        
+        // Wait one second
+        time.Sleep(time.Second)
+    }
+    ```
+    
+    **Tasks:**
+    - Create an infinite loop
+    - Update the clock every second
+    - Clear the screen before starting
+    - Move cursor to top-left before each update
+  </Step>
+  
+  <Step title="Blink the Separators (Bonus)">
+    Make the ":" separators blink on and off.
+    
+    ```go
+    // Toggle separator visibility
+    sep := separator
+    if time.Now().Second()%2 == 0 {
+        sep = placeholder{" ", " ", " ", " ", " "}
+    }
+    ```
+    
+    **Tasks:**
+    - Toggle separators based on odd/even seconds
+    - Create an empty placeholder for "off" state
+  </Step>
+</Steps>
+
+## Complete Example
+
+Here's a simplified version showing the key concepts:
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+	"github.com/inancgumus/screen"
+)
+
+func main() {
+	type placeholder [5]string
+
+	// Define digits 0-9 (abbreviated here)
+	zero := placeholder{"███", "█ █", "█ █", "█ █", "███"}
+	one := placeholder{"██ ", " █ ", " █ ", " █ ", "███"}
+	// ... define two through nine
+	
+	separator := placeholder{" ", "█", " ", "█", " "}
+	
+	digits := [10]placeholder{
+		zero, one, /* two through nine */
+	}
+
+	screen.Clear()
+
+	for {
+		screen.MoveTopLeft()
+		
+		now := time.Now()
+		hour, min, sec := now.Hour(), now.Minute(), now.Second()
+
+		clock := [8]placeholder{
+			digits[hour/10], digits[hour%10],
+			separator,
+			digits[min/10], digits[min%10],
+			separator,
+			digits[sec/10], digits[sec%10],
+		}
+
+		for line := range clock[0] {
+			for index, digit := range clock {
+				fmt.Print(digit[line])
+				
+				if index != len(clock)-1 {
+					fmt.Print("  ")
+				}
+			}
+			fmt.Println()
+		}
+
+		time.Sleep(time.Second)
+	}
+}
+```
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="Custom Type Definitions">
+    ```go
+    // Define a custom type for cleaner code
+    type placeholder [5]string
+    
+    // Now you can use it like any other type
+    var digit placeholder
+    digit = placeholder{"a", "b", "c", "d", "e"}
+    ```
+    
+    This makes the code more readable and type-safe.
+  </Accordion>
+  
+  <Accordion title="Digit Extraction">
+    ```go
+    num := 42
+    
+    tens := num / 10  // 4 (integer division)
+    ones := num % 10  // 2 (modulo/remainder)
+    
+    // Works for any two-digit number
+    // 59 -> 5 and 9
+    // 07 -> 0 and 7
+    ```
+  </Accordion>
+  
+  <Accordion title="Screen Package">
+    The `github.com/inancgumus/screen` package provides:
+    
+    - `screen.Clear()` - Clear the entire screen
+    - `screen.MoveTopLeft()` - Move cursor to (0,0)
+    
+    Install it with:
+    ```bash
+    go get github.com/inancgumus/screen
+    ```
+  </Accordion>
+  
+  <Accordion title="Time Package">
+    ```go
+    import "time"
+    
+    // Get current time
+    now := time.Now()
+    
+    // Extract components
+    hour := now.Hour()     // 0-23
+    min := now.Minute()    // 0-59
+    sec := now.Second()    // 0-59
+    
+    // Sleep/pause execution
+    time.Sleep(time.Second)        // 1 second
+    time.Sleep(time.Millisecond)   // 1 millisecond
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Output Example
+
+```
+███  ███     ███  ███     ███  ███
+█ █    █  █  █      █  █  █ █  █  
+█ █    █     ███    █     ███  ███
+█ █    █  █    █    █  █    █    █
+███  ███     ███  ███     ███  ███
+```
+
+This displays `01:15:08` in LED style!
+
+## Challenges & Tips
+
+<Warning>
+**Common Issues:**
+- Screen flickering: Make sure to use `screen.MoveTopLeft()` instead of `screen.Clear()` in the loop
+- Import errors: Install the screen package with `go get`
+- Time format: Remember that hours are 0-23 (24-hour format)
+</Warning>
+
+<Tip>
+**Enhancements to Try:**
+- Add 12-hour format with AM/PM
+- Show the date below the time
+- Use different colors (with ANSI codes)
+- Add a digital clock alongside the LED version
+- Make the blink rate configurable
+</Tip>
+
+## Practice Exercises
+
+After completing the project, try these exercises:
+
+1. **Refactor** - Split the code into functions
+2. **Alarm** - Add an alarm feature that beeps at a specific time
+3. **Split Second** - Show milliseconds
+4. **Ticker** - Use `time.Ticker` instead of `time.Sleep`
+
+## Resources
+
+- [Screen Package Documentation](https://godoc.org/github.com/inancgumus/screen)
+- [Time Package Documentation](https://pkg.go.dev/time)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Bouncing Ball" icon="baseball" href="/projects/bouncing-ball">
+    Create another animation project
+  </Card>
+  
+  <Card title="Arrays Guide" icon="list" href="/data-structures/arrays">
+    Learn more about arrays
+  </Card>
+</CardGroup>

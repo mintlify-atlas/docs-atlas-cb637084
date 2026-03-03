@@ -1,0 +1,536 @@
+---
+title: "Loops"
+description: "Master Go's for loop - the only loop construct you need. Learn basic loops, break, continue, nested loops, for-range, labels, and goto"
+---
+
+Go has only one looping construct: the `for` loop. However, it's flexible enough to handle all looping scenarios. There's no `while` or `do-while` in Go - the `for` loop does it all.
+
+## Basic For Loop
+
+The classic three-component for loop:
+
+```go
+var sum int
+
+for i := 1; i <= 1000; i++ {
+    sum += i
+}
+
+fmt.Println(sum)  // 500500
+```
+
+The three components are:
+1. **Initialization**: `i := 1` - runs once before the loop
+2. **Condition**: `i <= 1000` - checked before each iteration
+3. **Post statement**: `i++` - runs after each iteration
+
+<Note>
+The loop variable `i` is scoped to the for loop block only.
+</Note>
+
+## Infinite Loop
+
+You can create an infinite loop by omitting all three components:
+
+```go
+for {
+    fmt.Println("This runs forever")
+    // Use break to exit
+}
+```
+
+This is equivalent to `while(true)` in other languages.
+
+## Break Statement
+
+Use `break` to exit a loop early:
+
+```go
+var (
+    sum int
+    i   = 1
+)
+
+for {
+    if i > 5 {
+        break  // Exit the loop
+    }
+    
+    sum += i
+    fmt.Println(i, "-->", sum)
+    i++
+}
+
+fmt.Println(sum)  // 15
+```
+
+Output:
+```
+1 --> 1
+2 --> 3
+3 --> 6
+4 --> 10
+5 --> 15
+15
+```
+
+## Continue Statement
+
+Use `continue` to skip the rest of the current iteration:
+
+```go
+var (
+    sum int
+    i   = 1
+)
+
+for {
+    if i > 10 {
+        break
+    }
+    
+    i++  // Increment BEFORE continue
+    
+    if i%2 != 0 {
+        continue  // Skip odd numbers
+    }
+    
+    sum += i
+    fmt.Println(i, "-->", sum)
+}
+
+fmt.Println(sum)  // Sum of even numbers 2-10
+```
+
+<Warning>
+**Be careful with continue!** Make sure to increment your counter before the continue statement, or you'll create an infinite loop:
+
+```go
+// WRONG - Infinite loop!
+for {
+    if i%2 != 0 {
+        continue  // i never increments!
+    }
+    i++
+}
+
+// CORRECT
+for {
+    i++
+    if i%2 != 0 {
+        continue
+    }
+    // rest of code
+}
+```
+</Warning>
+
+## While-Style Loop
+
+Go doesn't have a `while` keyword, but you can use `for` with just a condition:
+
+```go
+i := 1
+
+for i <= 5 {
+    fmt.Println(i)
+    i++
+}
+```
+
+This is equivalent to:
+```go
+// Other languages:
+while (i <= 5) {
+    fmt.Println(i)
+    i++
+}
+```
+
+## Nested Loops
+
+Loops can be nested to create multi-dimensional iterations:
+
+```go
+const max = 5
+
+// Print the header
+fmt.Printf("%5s", "X")
+for i := 0; i <= max; i++ {
+    fmt.Printf("%5d", i)
+}
+fmt.Println()
+
+// Print the multiplication table
+for i := 0; i <= max; i++ {
+    // Print the vertical header
+    fmt.Printf("%5d", i)
+    
+    // Print the cells
+    for j := 0; j <= max; j++ {
+        fmt.Printf("%5d", i*j)
+    }
+    fmt.Println()
+}
+```
+
+Output:
+```
+    X    0    1    2    3    4    5
+    0    0    0    0    0    0    0
+    1    0    1    2    3    4    5
+    2    0    2    4    6    8   10
+    3    0    3    6    9   12   15
+    4    0    4    8   12   16   20
+    5    0    5   10   15   20   25
+```
+
+## For-Range Loop
+
+The `range` keyword iterates over slices, arrays, maps, and strings:
+
+### Iterating Over Slices
+
+```go
+words := strings.Fields("lazy cat jumps again and again and again")
+
+for i, v := range words {
+    fmt.Printf("#%-2d: %q\n", i+1, v)
+}
+```
+
+Output:
+```
+#1 : "lazy"
+#2 : "cat"
+#3 : "jumps"
+#4 : "again"
+#5 : "and"
+#6 : "again"
+#7 : "and"
+#8 : "again"
+```
+
+The `range` keyword returns two values:
+- `i` - the index
+- `v` - the value at that index
+
+### Ignoring the Index
+
+Use the blank identifier `_` to ignore the index:
+
+```go
+for _, v := range words {
+    fmt.Printf("%q\n", v)
+}
+```
+
+### Ignoring the Value
+
+Just omit the second variable:
+
+```go
+for i := range words {
+    fmt.Printf("Index: %d\n", i)
+}
+```
+
+### Iterating Over Command-Line Arguments
+
+Three ways to iterate over `os.Args`:
+
+```go
+// Method 1: Traditional for loop
+for i := 1; i < len(os.Args); i++ {
+    fmt.Printf("%q\n", os.Args[i])
+}
+
+// Method 2: Range with skip first element
+for i, v := range os.Args {
+    if i == 0 {
+        continue  // Skip program name
+    }
+    fmt.Printf("%q\n", v)
+}
+
+// Method 3: Range with slice (BEST)
+for _, v := range os.Args[1:] {
+    fmt.Printf("%q\n", v)
+}
+```
+
+<Tip>
+Method 3 is the most idiomatic - use slice syntax `[1:]` to skip the first element.
+</Tip>
+
+## Labeled Break and Continue
+
+Labels allow you to break or continue outer loops from within nested loops:
+
+### Labeled Break
+
+```go
+const corpus = "lazy cat jumps again and again and again"
+words := strings.Fields(corpus)
+query := os.Args[1:]
+
+queries:
+    for _, q := range query {
+        for i, w := range words {
+            if q == w {
+                fmt.Printf("#%-2d: %q\n", i+1, w)
+                break queries  // Break the outer loop
+            }
+        }
+    }
+```
+
+Without the label, `break` would only exit the inner loop.
+
+### Labeled Continue
+
+```go
+outer:
+    for i := 0; i < 3; i++ {
+        for j := 0; j < 3; j++ {
+            if i == j {
+                continue outer  // Continue outer loop
+            }
+            fmt.Printf("i=%d, j=%d\n", i, j)
+        }
+    }
+```
+
+<Note>
+Labels must be defined in the same function and must label a for, switch, or select statement.
+</Note>
+
+### Label Scope
+
+Labels have function-level scope:
+
+```go
+queries:  // Label scope is the entire function
+    for _, q := range query {
+        for i, w := range words {
+            if q == w {
+                break queries  // Can reference label from anywhere in function
+            }
+        }
+    }
+```
+
+## Goto Statement
+
+Go supports `goto` for jumping to labels, but it's rarely needed:
+
+```go
+var i int
+
+loop:
+    if i < 3 {
+        fmt.Println("looping")
+        i++
+        goto loop
+    }
+    fmt.Println("done")
+```
+
+Output:
+```
+looping
+looping
+looping
+done
+```
+
+<Warning>
+**Use goto sparingly!** It can make code hard to follow. Modern Go code rarely needs goto - use for loops, break, and continue instead.
+
+Restrictions:
+- Cannot jump over variable declarations
+- Cannot jump into a different scope
+- Must be in the same function
+</Warning>
+
+## Loop Patterns and Best Practices
+
+### Infinite Loop with Break
+
+```go
+for {
+    // Do something
+    
+    if condition {
+        break
+    }
+}
+```
+
+### Countdown Loop
+
+```go
+for i := 10; i > 0; i-- {
+    fmt.Println(i)
+}
+fmt.Println("Blast off!")
+```
+
+### Loop Until Condition
+
+```go
+attempts := 0
+for attempts < maxAttempts {
+    if tryOperation() {
+        break
+    }
+    attempts++
+}
+```
+
+### Iterating with Step
+
+```go
+// Count by 2s
+for i := 0; i <= 10; i += 2 {
+    fmt.Println(i)  // 0, 2, 4, 6, 8, 10
+}
+
+// Countdown by 5s
+for i := 100; i >= 0; i -= 5 {
+    fmt.Println(i)  // 100, 95, 90, ..., 5, 0
+}
+```
+
+## Common Loop Patterns
+
+<AccordionGroup>
+  <Accordion title="Summing Numbers">
+    ```go
+    sum := 0
+    for i := 1; i <= 100; i++ {
+        sum += i
+    }
+    fmt.Println(sum)  // 5050
+    ```
+  </Accordion>
+  
+  <Accordion title="Finding Elements">
+    ```go
+    found := false
+    for _, item := range items {
+        if item == target {
+            found = true
+            break
+        }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Processing Until Success">
+    ```go
+    for {
+        result, err := tryOperation()
+        if err == nil {
+            process(result)
+            break
+        }
+        time.Sleep(time.Second)
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Filtering Elements">
+    ```go
+    var filtered []int
+    for _, num := range numbers {
+        if num%2 == 0 {
+            filtered = append(filtered, num)
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## For Loop Variations
+
+| Pattern | Example | Use Case |
+|---------|---------|----------|
+| Traditional | `for i := 0; i < 10; i++` | Counter-based iteration |
+| Condition only | `for i < 10` | While-style loops |
+| Infinite | `for { }` | Event loops, servers |
+| Range | `for i, v := range slice` | Iterating collections |
+| Range value only | `for _, v := range slice` | When index isn't needed |
+| Range index only | `for i := range slice` | When value isn't needed |
+
+## Performance Considerations
+
+<CardGroup cols={2}>
+  <Card title="Range Copies Values" icon="copy">
+    `range` copies values. For large structs, use index access or pointers
+  </Card>
+  
+  <Card title="Slice in Condition" icon="gauge-high">
+    Cache `len(slice)` outside the loop if it doesn't change
+  </Card>
+  
+  <Card title="Break Early" icon="door-open">
+    Use break to exit loops as soon as possible
+  </Card>
+  
+  <Card title="Preallocate Slices" icon="memory">
+    If you know the size, preallocate slices before the loop
+  </Card>
+</CardGroup>
+
+### Example: Optimize Slice Length
+
+```go
+// Less efficient - calls len() every iteration
+for i := 0; i < len(items); i++ {
+    process(items[i])
+}
+
+// More efficient - cache length
+n := len(items)
+for i := 0; i < n; i++ {
+    process(items[i])
+}
+
+// Most idiomatic - use range
+for _, item := range items {
+    process(item)
+}
+```
+
+## Key Takeaways
+
+- Go has only one loop keyword: `for`
+- The for loop can replace while, do-while, and foreach from other languages
+- `break` exits the loop, `continue` skips to the next iteration
+- `range` iterates over slices, arrays, maps, and strings
+- Labels allow breaking/continuing outer loops from nested loops
+- Infinite loops use `for { }` syntax
+- Variables declared in the for statement are scoped to the loop
+- Use the blank identifier `_` to ignore values you don't need
+- Avoid `goto` in modern Go code - use structured loops instead
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Functions" icon="function" href="/functions/basics">
+    Learn to organize code into reusable functions
+  </Card>
+  
+  <Card title="Arrays and Slices" icon="list" href="/data-structures/slices">
+    Master Go's primary collection types
+  </Card>
+  
+  <Card title="Maps" icon="map" href="/data-structures/maps">
+    Work with key-value pairs using maps
+  </Card>
+  
+  <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">
+    Deep dive into Go's error handling patterns
+  </Card>
+</CardGroup>

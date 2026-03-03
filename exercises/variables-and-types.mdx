@@ -1,0 +1,412 @@
+---
+title: "Variables and Types Exercises"
+description: "Practice exercises for working with variables, types, and declarations in Go"
+---
+
+Master Go's variable declaration syntax, type system, and type conversions through these hands-on exercises.
+
+## Basic Data Types
+
+Get familiar with Go's fundamental data types and literals.
+
+<Accordion title="Print Literals">
+**Objective:** Practice using different literal types
+
+Print various values using int, float, string, and bool literals.
+
+**Key Concepts:**
+- Integer literals
+- Float literals
+- String literals
+- Boolean literals
+- Literal syntax
+
+**Approach:**
+```go
+fmt.Println(42)           // int literal
+fmt.Println(3.14)         // float literal
+fmt.Println("Hello")      // string literal
+fmt.Println(true)         // bool literal
+```
+</Accordion>
+
+<Accordion title="Print Hexadecimal Numbers">
+**Objective:** Learn alternative number representations
+
+Print numbers using hexadecimal notation.
+
+**Key Concepts:**
+- Hexadecimal literals (0x prefix)
+- Number base representations
+- Printf formatting
+
+**Approach:**
+```go
+fmt.Printf("%x\n", 255)   // Print as hex
+fmt.Println(0xFF)         // Hex literal (equals 255)
+```
+</Accordion>
+
+## Variable Declarations
+
+Practice the standard variable declaration syntax with the `var` keyword.
+
+<Accordion title="Declare Int Variables">
+**Objective:** Declare and use integer variables
+
+Declare int variables using the `var` keyword.
+
+**Approach:**
+```go
+var age int
+age = 25
+fmt.Println(age)
+```
+</Accordion>
+
+<Accordion title="Declare Bool Variables">
+**Objective:** Work with boolean variables
+
+Declare and initialize boolean variables.
+
+**Approach:**
+```go
+var isActive bool
+isActive = true
+fmt.Println(isActive)
+```
+</Accordion>
+
+<Accordion title="Declare Float64 Variables">
+**Objective:** Handle floating-point numbers
+
+Declare and use float64 variables for decimal numbers.
+
+**Approach:**
+```go
+var price float64
+price = 19.99
+fmt.Println(price)
+```
+</Accordion>
+
+<Accordion title="Declare String Variables">
+**Objective:** Work with text data
+
+Declare and manipulate string variables.
+
+**Approach:**
+```go
+var name string
+name = "Alice"
+fmt.Println(name)
+```
+</Accordion>
+
+<Accordion title="Undeclarable Types">
+**Objective:** Understand what cannot be declared with var
+
+Try to declare variables with invalid type specifications.
+
+**Key Concepts:**
+- Valid vs invalid type names
+- Compiler error messages
+- Type system rules
+
+**Approach:**
+Attempt declarations that will fail to understand the type system better.
+</Accordion>
+
+<Accordion title="Declare with Bits">
+**Objective:** Learn about sized integer types
+
+Use specific integer types like int8, int16, int32, int64.
+
+**Approach:**
+```go
+var small int8 = 127
+var medium int16 = 32767
+var large int64 = 9223372036854775807
+```
+</Accordion>
+
+<Accordion title="Multiple Declarations">
+**Objective:** Declare multiple variables efficiently
+
+Learn different ways to declare multiple variables.
+
+**Approach:**
+```go
+// Method 1
+var x, y, z int
+
+// Method 2
+var (
+    name string
+    age  int
+    active bool
+)
+```
+</Accordion>
+
+<Accordion title="Package-Level Variables">
+**Objective:** Understand package scope
+
+Declare variables outside of functions at the package level.
+
+**Key Concepts:**
+- Package-level scope
+- Initialization order
+- Global state
+
+**Approach:**
+Declare variables outside `main()` and access them within functions.
+</Accordion>
+
+## Short Declaration
+
+Master the `:=` operator for concise variable declarations.
+
+<Accordion title="Short Declaration Syntax">
+**Objective:** Use the := operator
+
+Practice the short declaration operator for local variables.
+
+**Key Concepts:**
+- Type inference
+- Local scope only
+- Simultaneous declaration and assignment
+
+**Approach:**
+```go
+name := "Bob"
+age := 30
+price := 19.99
+```
+</Accordion>
+
+<Accordion title="Multiple Short Declarations">
+**Objective:** Declare multiple variables with :=
+
+Declare and initialize multiple variables in one statement.
+
+**Approach:**
+```go
+name, age, city := "Alice", 25, "NYC"
+```
+</Accordion>
+
+<Accordion title="Short Declaration with Expressions">
+**Objective:** Use expressions in short declarations
+
+Assign the result of expressions to variables using :=.
+
+**Approach:**
+```go
+sum := 10 + 20
+product := 5 * 4
+length := len("Hello")
+```
+</Accordion>
+
+<Accordion title="Discard with Underscore">
+**Objective:** Use the blank identifier
+
+Discard unwanted return values using `_`.
+
+**Key Concepts:**
+- Blank identifier `_`
+- Discarding values
+- Multiple return values
+
+**Approach:**
+```go
+_, err := someFunction()
+value, _ := anotherFunction()
+```
+</Accordion>
+
+<Accordion title="Redeclaration">
+**Objective:** Understand redeclaration rules
+
+Learn when you can redeclare variables with :=.
+
+**Key Concepts:**
+- At least one new variable required
+- Redeclaration vs reassignment
+- Scope rules
+
+**Approach:**
+```go
+x := 10
+x, y := 20, 30  // OK: y is new
+// x := 30      // Error: no new variables
+```
+</Accordion>
+
+## Assignment and Type Conversion
+
+Learn to work with variable assignments and convert between types.
+
+<Accordion title="Variable Assignment">
+**Objective:** Reassign variable values
+
+Practice assigning new values to existing variables.
+
+**Approach:**
+```go
+color := "red"
+color = "blue"  // Assignment (not declaration)
+```
+</Accordion>
+
+<Accordion title="Assignment with Expressions">
+**Objective:** Use expressions in assignments
+
+Assign calculated values to variables.
+
+**Approach:**
+```go
+x := 10
+x = x + 5
+x = x * 2
+```
+</Accordion>
+
+<Accordion title="Calculate Rectangle Perimeter">
+**Objective:** Apply variables to solve a problem
+
+Calculate and print the perimeter of a rectangle.
+
+**Approach:**
+1. Declare width and height
+2. Calculate perimeter: `2 * (width + height)`
+3. Print the result
+</Accordion>
+
+<Accordion title="Multiple Assignment">
+**Objective:** Assign to multiple variables simultaneously
+
+Use parallel assignment for multiple variables.
+
+**Approach:**
+```go
+x, y := 1, 2
+x, y = y, x  // Swap values
+```
+</Accordion>
+
+<Accordion title="Swapper">
+**Objective:** Swap variable values
+
+Exchange the values of two variables.
+
+**Approach:**
+```go
+a, b := 5, 10
+a, b = b, a
+fmt.Println(a, b)  // 10 5
+```
+</Accordion>
+
+<Accordion title="Type Conversion Basics">
+**Objective:** Convert between numeric types
+
+Practice explicit type conversion in Go.
+
+**Key Concepts:**
+- Explicit conversion required
+- No implicit conversions
+- Syntax: `Type(value)`
+
+**Approach:**
+```go
+var i int = 42
+var f float64 = float64(i)
+var u uint = uint(f)
+```
+</Accordion>
+
+<Accordion title="Fix Type Conversion Errors">
+**Objective:** Debug type mismatch issues
+
+Fix programs with type conversion errors.
+
+**Approach:**
+1. Identify type mismatches
+2. Add explicit conversions
+3. Ensure conversions are safe
+
+**Example fixes:**
+```go
+// Error: cannot use int as float64
+var x float64 = 10  // Wrong
+
+// Fixed:
+var x float64 = float64(10)
+```
+</Accordion>
+
+## Command-Line Arguments
+
+Work with command-line input using `os.Args`.
+
+<Accordion title="Count Arguments">
+**Objective:** Access command-line arguments
+
+Count and print the number of arguments passed to your program.
+
+**Key Concepts:**
+- `os.Args` slice
+- Argument indexing
+- Program name in Args[0]
+
+**Approach:**
+```go
+import "os"
+
+fmt.Println("Argument count:", len(os.Args))
+```
+</Accordion>
+
+<Accordion title="Print the Path">
+**Objective:** Access the program path
+
+Print the path of the running program.
+
+**Approach:**
+```go
+fmt.Println("Program path:", os.Args[0])
+```
+</Accordion>
+
+<Accordion title="Print Your Name">
+**Objective:** Use command-line arguments
+
+Accept and print a name from command-line arguments.
+
+**Approach:**
+1. Check if argument exists
+2. Access `os.Args[1]`
+3. Print the value
+</Accordion>
+
+<Accordion title="Greet Multiple People">
+**Objective:** Process multiple arguments
+
+Greet each person passed as a command-line argument.
+
+**Approach:**
+Loop through `os.Args[1:]` and greet each person.
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Control Flow" icon="code-branch" href="/exercises/control-flow">
+    Learn conditionals and loops
+  </Card>
+  <Card title="Data Structures" icon="database" href="/exercises/data-structures">
+    Work with arrays, slices, and maps
+  </Card>
+</CardGroup>

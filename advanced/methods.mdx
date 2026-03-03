@@ -1,0 +1,564 @@
+---
+title: 'Methods and Receivers'
+description: 'Learn how to attach methods to types, choose between value and pointer receivers, and write idiomatic Go code'
+---
+
+## What are Methods?
+
+Methods are functions that are attached to types. They allow you to define behavior for your custom types, making your code more organized and object-oriented while maintaining Go's simplicity.
+
+In Go, any type can have methods - not just structs. The type that receives the method is called the **receiver**.
+
+## Basic Method Syntax
+
+Instead of passing a value as a parameter, you can attach a method directly to a type:
+
+<CodeGroup>
+
+```go Regular Function
+func printBook(b book) {
+    fmt.Printf("%-15s: $%.2f\n", b.title, b.price)
+}
+
+func printGame(g game) {
+    fmt.Printf("%-15s: $%.2f\n", g.title, g.price)
+}
+
+// Problem: Can't use the same function name
+// Problem: Caller must know which function to use
+```
+
+```go Methods
+type book struct {
+    title string
+    price float64
+}
+
+func (b book) print() {
+    fmt.Printf("%-15s: $%.2f\n", b.title, b.price)
+}
+
+type game struct {
+    title string
+    price float64
+}
+
+func (g game) print() {
+    fmt.Printf("%-15s: $%.2f\n", g.title, g.price)
+}
+
+// Benefits:
+// + Same method name for different types
+// + More intuitive calling syntax
+// + Type-specific behavior
+```
+
+</CodeGroup>
+
+### Calling Methods
+
+```go Method Calls
+func main() {
+    mobydick := book{
+        title: "moby dick",
+        price: 10,
+    }
+    
+    minecraft := game{
+        title: "minecraft",
+        price: 20,
+    }
+    
+    // Clean, intuitive syntax
+    mobydick.print()  // sends `mobydick` value to `book.print`
+    minecraft.print() // sends `minecraft` value to `game.print`
+}
+```
+
+<Note>
+Methods provide namespacing - you can have the same method name (like `print`) on different types without conflicts.
+</Note>
+
+## Value vs Pointer Receivers
+
+The choice between value and pointer receivers is one of the most important decisions when designing Go APIs.
+
+### Value Receivers
+
+Value receivers receive a **copy** of the original value. Changes made inside the method don't affect the original.
+
+```go Value Receiver
+type book struct {
+    title string
+    price float64
+}
+
+func (b book) print() {
+    // b is a copy of the original book value
+    fmt.Printf("%-15s: $%.2f\n", b.title, b.price)
+}
+
+func (b book) discount(ratio float64) {
+    b.price *= (1 - ratio)
+    // This only modifies the copy!
+    // Original book is unchanged
+}
+
+func main() {
+    mobydick := book{title: "moby dick", price: 10}
+    mobydick.discount(0.5)
+    mobydick.print() // Still $10.00 - unchanged!
+}
+```
+
+### Pointer Receivers
+
+Pointer receivers receive a **pointer** to the original value. Changes made inside the method affect the original.
+
+```go Pointer Receiver
+type game struct {
+    title string
+    price float64
+}
+
+func (g *game) print() {
+    // g is a pointer to the original game
+    fmt.Printf("%-15s: $%.2f\n", g.title, g.price)
+}
+
+func (g *game) discount(ratio float64) {
+    // g is a pointer - this modifies the original
+    g.price *= (1 - ratio)
+}
+
+func main() {
+    minecraft := game{title: "minecraft", price: 20}
+    
+    // Go automatically converts: minecraft.discount(0.1)
+    // to: (&minecraft).discount(0.1)
+    minecraft.discount(0.1)
+    
+    minecraft.print() // $18.00 - modified!
+}
+```
+
+<Info>
+Go automatically handles the conversion between values and pointers when calling methods. You can call `minecraft.discount(0.1)` even though `discount` expects `*game`.
+</Info>
+
+## When to Use Each Receiver Type
+
+<Tabs>
+  <Tab title="Use Value Receivers">
+    **Use value receivers when:**
+    
+    - The type is small (a few words of data)
+    - You want to guarantee immutability
+    - The method doesn't need to modify the receiver
+    - The type is a basic type or small struct
+    
+    ```go Small, Immutable Types
+    type money float64
+    
+    func (m money) string() string {
+        return fmt.Sprintf("$%.2f", m)
+    }
+    
+    type point struct {
+        x, y int
+    }
+    
+    func (p point) distance() float64 {
+        return math.Sqrt(float64(p.x*p.x + p.y*p.y))
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Use Pointer Receivers">
+    **Use pointer receivers when:**
+    
+    - The method needs to modify the receiver
+    - The type is large (would be expensive to copy)
+    - You want consistency (if one method uses pointer, use it for all)
+    - The type contains sync primitives (must not be copied)
+    
+    ```go Large or Mutable Types
+    type huge struct {
+        games [10_000_000]game // ~200MB
+    }
+    
+    // Only copies a single pointer
+    func (h *huge) addr() {
+        fmt.Printf("%p\n", h)
+    }
+    
+    // Calling this 10 times = ~2GB if not using pointer!
+    // func (h huge) addr() {
+    //     fmt.Printf("%p\n", &h)
+    // }
+    ```
+  </Tab>
+</Tabs>
+
+## Consistency Rule
+
+<Warning>
+**Important:** If any method on a type has a pointer receiver, use pointer receivers for ALL methods on that type, even if some methods don't modify the receiver.
+</Warning>
+
+```go Consistent Receivers
+type game struct {
+    title string
+    price float64
+}
+
+// Both methods use pointer receivers for consistency
+func (g *game) print() {
+    fmt.Printf("%-15s: $%.2f\n", g.title, g.price)
+}
+
+func (g *game) discount(ratio float64) {
+    g.price *= (1 - ratio)
+}
+```
+
+This consistency helps prevent subtle bugs and makes the API more predictable.
+
+## Methods on Non-Struct Types
+
+Methods aren't limited to structs - you can attach them to any named type:
+
+```go Methods on Named Types
+type money float64
+
+func (m money) string() string {
+    return fmt.Sprintf("$%.2f", m)
+}
+
+type list []string
+
+func (l list) print() {
+    for i, item := range l {
+        fmt.Printf("%d: %s\n", i, item)
+    }
+}
+
+type handler func(string) string
+
+func (h handler) apply(s string) string {
+    return h(s)
+}
+
+func main() {
+    var m money = 19.99
+    fmt.Println(m.string()) // $19.99
+    
+    l := list{"apple", "banana", "cherry"}
+    l.print()
+}
+```
+
+<Note>
+You can only define methods on types declared in the same package. You can't add methods to built-in types like `int` or `string` directly - you must create a named type first.
+</Note>
+
+## Method Sets and Interface Implementation
+
+The receiver type affects which methods are in a type's method set:
+
+<CodeGroup>
+
+```go Value Method Set
+type book struct {
+    title string
+}
+
+func (b book) print() {
+    fmt.Println(b.title)
+}
+
+func main() {
+    b := book{title: "Go Programming"}
+    b.print()  // ✓ Works
+    
+    pb := &book{title: "Go Programming"}
+    pb.print() // ✓ Works - Go auto-dereferences
+}
+```
+
+```go Pointer Method Set
+type game struct {
+    title string
+}
+
+func (g *game) print() {
+    fmt.Println(g.title)
+}
+
+func main() {
+    g := game{title: "Chess"}
+    g.print()  // ✓ Works - Go auto-takes address
+    
+    pg := &game{title: "Chess"}
+    pg.print() // ✓ Works
+}
+```
+
+</CodeGroup>
+
+### Method Sets and Interfaces
+
+This becomes important with interfaces:
+
+```go Interface Satisfaction
+type printer interface {
+    print()
+}
+
+type book struct {
+    title string
+}
+
+// Value receiver
+func (b book) print() {
+    fmt.Println(b.title)
+}
+
+type game struct {
+    title string
+}
+
+// Pointer receiver
+func (g *game) print() {
+    fmt.Println(g.title)
+}
+
+func display(p printer) {
+    p.print()
+}
+
+func main() {
+    b := book{title: "Go"}
+    display(b)  // ✓ Works - book implements printer
+    display(&b) // ✓ Works - *book also implements printer
+    
+    g := game{title: "Chess"}
+    // display(g)  // ✗ Error - game doesn't implement printer
+    display(&g) // ✓ Works - *game implements printer
+}
+```
+
+<Warning>
+If a method has a pointer receiver, only pointers to that type satisfy the interface. If a method has a value receiver, both values and pointers satisfy the interface.
+</Warning>
+
+## Automatic Dereferencing and Addressing
+
+Go provides convenient syntactic sugar for method calls:
+
+```go Automatic Conversions
+type counter struct {
+    value int
+}
+
+func (c counter) get() int {
+    return c.value
+}
+
+func (c *counter) increment() {
+    c.value++
+}
+
+func main() {
+    c := counter{value: 0}
+    
+    // Value receiver - both work
+    c.get()    // Direct call
+    (&c).get() // Also works
+    
+    // Pointer receiver - both work
+    (&c).increment() // Direct call
+    c.increment()    // Go converts to (&c).increment()
+}
+```
+
+Go automatically:
+- Dereferences pointers when calling value receiver methods
+- Takes addresses when calling pointer receiver methods
+
+## Real-World Example: Building a Store
+
+Let's see how methods create clean, maintainable code:
+
+```go Complete Example
+type money float64
+
+func (m money) string() string {
+    return fmt.Sprintf("$%.2f", m)
+}
+
+type book struct {
+    title string
+    price money
+}
+
+func (b book) print() {
+    fmt.Printf("%-15s: %s\n", b.title, b.price.string())
+}
+
+type game struct {
+    title string
+    price money
+}
+
+func (g *game) print() {
+    fmt.Printf("%-15s: %s\n", g.title, g.price.string())
+}
+
+func (g *game) discount(ratio float64) {
+    g.price *= money(1 - ratio)
+}
+
+func main() {
+    var (
+        mobydick  = book{title: "moby dick", price: 10}
+        minecraft = game{title: "minecraft", price: 20}
+        tetris    = game{title: "tetris", price: 5}
+    )
+    
+    // Apply a discount
+    minecraft.discount(.1)
+    
+    // Print all items
+    mobydick.print()
+    minecraft.print()
+    tetris.print()
+}
+```
+
+Output:
+```
+moby dick      : $10.00
+minecraft      : $18.00
+tetris         : $5.00
+```
+
+## Performance Considerations
+
+<AccordionGroup>
+
+<Accordion title="Value Receiver Copying">
+Each value receiver method call creates a copy of the receiver:
+
+```go Copy Cost
+type large struct {
+    data [1000]int
+}
+
+// This copies 8KB on every call!
+func (l large) process() {
+    // ...
+}
+
+// This copies only a pointer (8 bytes)
+func (l *large) process() {
+    // ...
+}
+```
+</Accordion>
+
+<Accordion title="Escape Analysis">
+The compiler determines whether values can stay on the stack or must move to the heap:
+
+```go Heap Allocation
+func (g *game) reference() *game {
+    return g // Pointer escapes, may cause heap allocation
+}
+
+func (g game) copy() game {
+    return g // Value doesn't escape, stays on stack
+}
+```
+</Accordion>
+
+</AccordionGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Start with Value Receivers">
+    Begin with value receivers unless you have a specific reason to use pointers.
+  </Step>
+  
+  <Step title="Switch to Pointers When Needed">
+    Use pointer receivers when:
+    - Methods need to modify the receiver
+    - The type is large
+    - Other methods already use pointer receivers
+  </Step>
+  
+  <Step title="Be Consistent">
+    Once you use a pointer receiver for one method, use it for all methods on that type.
+  </Step>
+  
+  <Step title="Document Intent">
+    Make it clear whether methods modify the receiver or return new values.
+  </Step>
+</Steps>
+
+## Common Mistakes
+
+<Warning>
+**Mixing Receiver Types**
+
+```go Bad: Inconsistent
+type game struct {
+    title string
+    price float64
+}
+
+func (g game) print() {      // Value receiver
+    fmt.Println(g.title)
+}
+
+func (g *game) discount() {  // Pointer receiver
+    g.price *= 0.9
+}
+
+// This inconsistency can cause confusion and bugs
+```
+
+**Good: Consistent**
+
+```go Good: All Pointers
+type game struct {
+    title string
+    price float64
+}
+
+func (g *game) print() {     // Pointer receiver
+    fmt.Println(g.title)
+}
+
+func (g *game) discount() {  // Pointer receiver
+    g.price *= 0.9
+}
+```
+</Warning>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Interfaces" icon="plug" href="/advanced/interfaces">
+    How methods and interfaces work together
+  </Card>
+  <Card title="Pointers" icon="location-dot" href="/advanced/pointers">
+    Understanding pointer fundamentals
+  </Card>
+  <Card title="Structs" icon="cube" href="/data-structures/structs">
+    Creating custom types for methods
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">
+    Methods for error types
+  </Card>
+</CardGroup>

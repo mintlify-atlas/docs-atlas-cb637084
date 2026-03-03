@@ -1,0 +1,177 @@
+---
+title: "Getting Started Exercises"
+description: "Practice exercises for writing your first Go programs and understanding packages"
+---
+
+These exercises will help you get comfortable with writing Go programs, understanding packages, and working with scopes.
+
+## Write Your First Program
+
+These foundational exercises introduce you to the basics of Go syntax and program structure.
+
+<Accordion title="Print Names">
+**Objective:** Practice using `fmt.Println` to output text
+
+Write a program that prints your name and your best friend's name using `fmt.Println` twice.
+
+**Key Concepts:**
+- Using the `fmt` package
+- Calling functions with string arguments
+- Basic program structure
+
+**Approach:**
+1. Import the `fmt` package
+2. Create a `main` function
+3. Use `fmt.Println()` for each name
+</Accordion>
+
+<Accordion title="Build and Share">
+**Objective:** Learn cross-platform compilation
+
+Build your Hello World program and share it with friends on different operating systems.
+
+**Key Concepts:**
+- Using `go build`
+- Cross-compilation with GOOS and GOARCH
+- Platform-specific executables
+
+**Approach:**
+1. Build for your platform: `go build`
+2. For macOS: `GOOS=darwin GOARCH=386 go build`
+3. For Windows: `GOOS=windows GOARCH=386 go build`
+4. For Linux: `GOOS=linux GOARCH=arm GOARM=7 go build`
+
+**Note:** On Windows Command Prompt or PowerShell, use:
+```bash
+cmd /c "set GOOS=darwin GOARCH=386 && go build"
+```
+</Accordion>
+
+<Accordion title="Print vs Println">
+**Objective:** Understand the difference between Print and Println
+
+Replace `fmt.Println` with `fmt.Print` in your program and observe the difference.
+
+**Key Concepts:**
+- `Print` vs `Println` behavior
+- Newline characters
+- Output formatting
+
+**Approach:**
+- `Println` adds a newline after output
+- `Print` does not add a newline
+- Try calling each multiple times to see the difference
+</Accordion>
+
+<Accordion title="Multiple Values">
+**Objective:** Learn to print multiple values in one call
+
+Call `Println` or `Print` with multiple values separated by commas.
+
+**Key Concepts:**
+- Variadic functions
+- Multiple arguments
+- Space separation
+
+**Approach:**
+```go
+fmt.Println("Hello", "World", "from", "Go")
+```
+</Accordion>
+
+<Accordion title="Experiment with Syntax">
+**Objective:** Understand Go's syntax requirements
+
+Try these experiments to learn what works and what doesn't:
+
+1. Remove double quotes from a string literal
+2. Move package and import statements to the bottom of the file
+
+**Key Concepts:**
+- String literal syntax
+- File structure requirements
+- Compiler error messages
+
+**Approach:**
+Each experiment will produce an error - read the error messages carefully to understand Go's requirements.
+</Accordion>
+
+## Packages and Scopes
+
+Understanding packages and scopes is crucial for organizing your Go code effectively.
+
+<Accordion title="Create Your Own Package">
+**Objective:** Learn to create and use custom packages
+
+Create multiple Go files with different packages and call their functions from main.
+
+**Key Concepts:**
+- Package declaration
+- Exported vs unexported identifiers
+- Importing local packages
+- File organization
+
+**Approach:**
+1. Create a new directory for your package
+2. Declare package with `package mypackage`
+3. Create exported functions (capitalized names)
+4. Import and use in your main package
+</Accordion>
+
+<Accordion title="Understanding Scopes">
+**Objective:** Learn how scoping works across packages
+
+Experiment with variable and function visibility across different scopes.
+
+**Key Concepts:**
+- Package-level scope
+- Function-level scope
+- Block scope
+- Exported vs unexported identifiers
+
+**Approach:**
+1. Create variables at different scope levels
+2. Try to access them from different locations
+3. Observe which identifiers are accessible where
+4. Remember: Capitalized = exported, lowercase = unexported
+</Accordion>
+
+<Accordion title="Rename Imports">
+**Objective:** Handle package name conflicts
+
+Import the same package using different names (aliasing).
+
+**Key Concepts:**
+- Import aliases
+- Package naming conflicts
+- Custom import names
+
+**Approach:**
+```go
+import (
+    f "fmt"
+    fm "fmt"
+)
+
+func main() {
+    f.Println("Using alias f")
+    fm.Println("Using alias fm")
+}
+```
+</Accordion>
+
+## Additional Resources
+
+<Card title="Go Documentation" icon="book" href="https://golang.org/pkg">
+Explore the official Go package documentation to see what's available in the standard library.
+</Card>
+
+<Card title="A Tour of Go" icon="rocket" href="https://tour.golang.org/">
+Take an interactive tour of Go's features and syntax.
+</Card>
+
+## Next Steps
+
+Once you're comfortable with these basics, move on to:
+- [Variables and Types](/exercises/variables-and-types) - Learn about Go's type system
+- [Control Flow](/exercises/control-flow) - Master conditionals and loops

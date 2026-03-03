@@ -1,0 +1,404 @@
+---
+title: 'Pointers'
+description: 'Master pointer fundamentals, memory addresses, and pointer usage patterns in Go'
+---
+
+## Introduction to Pointers
+
+Pointers are variables that store memory addresses of other variables. They allow you to pass references to values instead of copies, enabling efficient memory usage and the ability to modify values across function boundaries.
+
+In Go, pointers are denoted with the `*` symbol for types and the `&` operator to get an address.
+
+## Basic Pointer Syntax
+
+<CodeGroup>
+
+```go Declaring and Using Pointers
+package main
+
+import "fmt"
+
+func main() {
+    var counter byte = 100
+    P := &counter  // P is a pointer to counter
+    V := *P        // V is a copy of counter's value
+
+    fmt.Printf("counter : %-16d address: %-16p\n", counter, &counter)
+    fmt.Printf("P       : %-16p address: %-16p *P: %-16d\n", P, &P, *P)
+    fmt.Printf("V       : %-16d address: %-16p\n", V, &V)
+}
+```
+
+```go Checking for Nil
+var P *int
+
+if P == nil {
+    fmt.Printf("P is nil and its address is %p\n", P)
+}
+
+// Always initialize before dereferencing
+counter := 100
+P = &counter
+
+if P == &counter {
+    fmt.Printf("P points to counter: %p == %p\n", P, &counter)
+}
+```
+
+</CodeGroup>
+
+### Key Pointer Operations
+
+| Operation | Syntax | Description |
+|-----------|--------|-------------|
+| **Address-of** | `&variable` | Gets the memory address of a variable |
+| **Dereference** | `*pointer` | Accesses the value at the pointer's address |
+| **Pointer type** | `*Type` | Declares a pointer type |
+
+## Pointers vs Values
+
+Understanding when values are copied vs when they're referenced is crucial for writing efficient Go code.
+
+<CodeGroup>
+
+```go Pass by Value
+func passVal(n int) int {
+    n = 50 // counter doesn't change because `n` is a copy
+    fmt.Printf("n      : %-13d addr: %-13p\n", n, &n)
+    return n
+}
+
+func main() {
+    counter := 100
+    counter = passVal(counter)
+    fmt.Printf("counter: %-13d addr: %-13p\n", counter, &counter)
+}
+```
+
+```go Pass by Pointer
+func passPtrVal(pn *int) {
+    fmt.Printf("pn     : %-13p addr: %-13p *pn: %d\n", pn, &pn, *pn)
+    
+    // Pointers can breach function isolation borders
+    *pn++ // counter changes because `pn` points to `counter`
+    fmt.Printf("pn     : %-13p addr: %-13p *pn: %d\n", pn, &pn, *pn)
+    
+    // Setting it to nil doesn't affect the caller
+    pn = nil
+}
+
+func main() {
+    counter := 100
+    passPtrVal(&counter) // Pass pointer to counter
+    passPtrVal(&counter)
+    fmt.Printf("counter: %-13d addr: %-13p\n", counter, &counter)
+}
+```
+
+</CodeGroup>
+
+<Note>
+When you pass a pointer to a function, the pointer itself is copied, but it still points to the same memory location. This allows the function to modify the original value.
+</Note>
+
+## Pointers with Composite Types
+
+Different composite types in Go have different behaviors regarding pointers and copying.
+
+### Arrays
+
+Arrays are always copied when passed to functions. Use pointers to avoid copying large arrays.
+
+```go Arrays and Pointers
+func incr(nums [3]int) {
+    // nums is a complete copy
+    for i := range nums {
+        nums[i]++
+    }
+    // Changes are lost when function returns
+}
+
+func incrByPtr(nums *[3]int) {
+    // nums is a pointer to the original array
+    for i := range nums {
+        nums[i]++ // same as: (*nums)[i]++
+    }
+    // Changes persist after function returns
+}
+
+func main() {
+    nums := [...]int{1, 2, 3}
+    
+    incr(nums)      // nums unchanged
+    incrByPtr(&nums) // nums modified
+}
+```
+
+### Slices
+
+Slices already contain a pointer to their underlying array, so they behave differently.
+
+```go Slices and Pointers
+func up(list []string) {
+    for i := range list {
+        list[i] = strings.ToUpper(list[i])
+        // Modifies the underlying array
+    }
+    
+    list = append(list, "NEW")
+    // This creates a new slice header
+    // Original list in caller is unchanged
+}
+
+func upPtr(list *[]string) {
+    lv := *list
+    
+    for i := range lv {
+        lv[i] = strings.ToUpper(lv[i])
+    }
+    
+    *list = append(*list, "NEW")
+    // Modifies the original slice
+}
+```
+
+<Warning>
+Slice modifications affect the underlying array, but reassigning the slice (like with `append`) only affects the local slice header unless you use a pointer to the slice.
+</Warning>
+
+### Maps
+
+Maps are reference types, so they don't need pointers to be modified in functions.
+
+```go Maps Don't Need Pointers
+func fix(m map[string]int) {
+    m["one"] = 1
+    m["two"] = 2
+    m["three"] = 3
+    // Changes persist without pointers
+}
+
+func main() {
+    confused := map[string]int{"one": 2, "two": 1}
+    fix(confused)
+    fmt.Println(confused) // map[one:1 two:2 three:3]
+}
+```
+
+### Structs
+
+Structs are value types and are copied when passed to functions.
+
+```go Structs and Pointers
+type house struct {
+    name  string
+    rooms int
+}
+
+func addRoom(h house) {
+    h.rooms++ // Modifies the copy
+    fmt.Printf("addRoom()     : %p %+v\n", &h, h)
+}
+
+func addRoomPtr(h *house) {
+    h.rooms++ // same as: (*h).rooms++
+    fmt.Printf("addRoomPtr()  : %p %+v\n", h, h)
+}
+
+func main() {
+    myHouse := house{name: "My House", rooms: 5}
+    
+    addRoom(myHouse)        // myHouse unchanged
+    addRoomPtr(&myHouse)    // myHouse modified
+}
+```
+
+## Practical Example: Log Parser
+
+Here's a real-world example showing why pointers matter for maintaining state:
+
+<CodeGroup>
+
+```go parser.go
+package main
+
+type result struct {
+    domain string
+    visits int
+}
+
+type parser struct {
+    sum     map[string]result // metrics per domain
+    domains []string          // unique domain names
+    total   int               // total visits for all domains
+    lines   int               // number of parsed lines
+    lerr    error             // the last error occurred
+}
+
+func newParser() parser {
+    return parser{sum: make(map[string]result)}
+}
+
+// parse accepts a pointer to update the parser state
+func parse(p *parser, line string) (parsed result) {
+    if p.lerr != nil {
+        return
+    }
+    
+    p.lines++
+    
+    fields := strings.Fields(line)
+    if len(fields) != 2 {
+        p.lerr = fmt.Errorf("wrong input: %v (line #%d)", fields, p.lines)
+        return
+    }
+    
+    parsed.domain = fields[0]
+    
+    var err error
+    parsed.visits, err = strconv.Atoi(fields[1])
+    if parsed.visits < 0 || err != nil {
+        p.lerr = fmt.Errorf("wrong input: %q (line #%d)", fields[1], p.lines)
+    }
+    return
+}
+
+// update accepts a pointer to modify the parser state
+func update(p *parser, parsed result) {
+    if p.lerr != nil {
+        return
+    }
+    
+    domain, visits := parsed.domain, parsed.visits
+    
+    if _, ok := p.sum[domain]; !ok {
+        p.domains = append(p.domains, domain)
+    }
+    
+    p.total += visits
+    
+    p.sum[domain] = result{
+        domain: domain,
+        visits: visits + p.sum[domain].visits,
+    }
+}
+```
+
+```go main.go
+func main() {
+    p := newParser()
+    
+    in := bufio.NewScanner(os.Stdin)
+    for in.Scan() {
+        parsed := parse(&p, in.Text())
+        update(&p, parsed)
+    }
+    
+    summarize(p)
+    dumpErrs([]error{in.Err(), p.lerr})
+}
+
+func summarize(p parser) {
+    sort.Strings(p.domains)
+    
+    fmt.Printf("%-30s %10s\n", "DOMAIN", "VISITS")
+    fmt.Println(strings.Repeat("-", 45))
+    
+    for _, domain := range p.domains {
+        parsed := p.sum[domain]
+        fmt.Printf("%-30s %10d\n", domain, parsed.visits)
+    }
+    
+    fmt.Printf("\n%-30s %10d\n", "TOTAL", p.total)
+}
+```
+
+</CodeGroup>
+
+<Info>
+In this example, `parse` and `update` use pointer receivers because they need to modify the parser's state. The `summarize` function uses a value receiver because it only reads the data.
+</Info>
+
+## Best Practices
+
+<AccordionGroup>
+
+<Accordion title="When to Use Pointers">
+**Use pointers when:**
+- You need to modify the original value
+- The value is large and copying would be expensive
+- You want to indicate that a parameter is optional (can be `nil`)
+- You're implementing methods that modify the receiver
+
+**Don't use pointers when:**
+- The value is small (a few words)
+- The type is a map, slice, or channel (already reference types)
+- You want to ensure immutability
+</Accordion>
+
+<Accordion title="Pointer Safety">
+- Always check for `nil` before dereferencing
+- Don't return pointers to local variables (they'll be moved to heap)
+- Be careful with pointer arithmetic (not allowed in Go)
+- Remember that pointer equality checks the address, not the value
+</Accordion>
+
+<Accordion title="Performance Considerations">
+- Passing large structs by pointer avoids copying overhead
+- However, pointers can reduce cache locality
+- Modern CPUs optimize for value types in many cases
+- Profile before optimizing with pointers
+</Accordion>
+
+</AccordionGroup>
+
+## Common Patterns
+
+### Optional Parameters with Nil Pointers
+
+```go Optional Values
+func createUser(name string, age *int) {
+    fmt.Printf("Name: %s\n", name)
+    if age != nil {
+        fmt.Printf("Age: %d\n", *age)
+    } else {
+        fmt.Println("Age: not specified")
+    }
+}
+
+func main() {
+    age := 30
+    createUser("Alice", &age)  // With age
+    createUser("Bob", nil)      // Without age
+}
+```
+
+### Pointer to Interface
+
+```go Pointer to Interface
+var i interface{}
+var p *interface{} = &i
+
+// This is rarely needed - interfaces already hold pointers internally
+```
+
+<Warning>
+You rarely need a pointer to an interface. Interfaces are designed to work without explicit pointers.
+</Warning>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Methods and Receivers" icon="function" href="/advanced/methods">
+    Learn about pointer vs value receivers
+  </Card>
+  <Card title="Structs" icon="cube" href="/data-structures/structs">
+    Understanding struct memory layout
+  </Card>
+  <Card title="Slices" icon="layer-group" href="/data-structures/slices">
+    How slices use pointers internally
+  </Card>
+  <Card title="Interfaces" icon="plug" href="/advanced/interfaces">
+    Interfaces and pointer receivers
+  </Card>
+</CardGroup>

@@ -1,0 +1,498 @@
+---
+title: "Go Idioms"
+description: "Common Go idioms and patterns demonstrated throughout the Learn Go course"
+icon: "code"
+---
+
+## Overview
+
+Go has a distinct set of idioms that make code more readable and idiomatic. This guide covers the most common patterns found in the Learn Go course materials, drawn from thousands of examples.
+
+## Error Handling Idioms
+
+### The Nil Error Pattern
+
+<CodeGroup>
+```go Success Check
+result, err := DoSomething()
+if err != nil {
+    // Handle error
+    return err
+}
+// Use result
+```
+
+```go Early Return
+func processData(input string) error {
+    data, err := parseInput(input)
+    if err != nil {
+        return fmt.Errorf("parsing failed: %w", err)
+    }
+    
+    if err := validate(data); err != nil {
+        return fmt.Errorf("validation failed: %w", err)
+    }
+    
+    return save(data)
+}
+```
+</CodeGroup>
+
+<Info>
+**From the course**: A `nil` error means success. A non-nil error means failure. This is the Go way.
+</Info>
+
+### Short If with Error Check
+
+```go From 11-if examples
+// Declare and check in one line
+if d, err := time.ParseDuration("1h10s"); err != nil {
+    fmt.Println("error:", err)
+} else {
+    fmt.Println("duration:", d)
+}
+```
+
+## Variable Declaration Idioms
+
+### Short Declaration `:=`
+
+```go From 06-variables
+// Use for local variables
+name := "Pablo Picasso"
+age := 95
+
+// Multiple assignment
+name, age := "Pablo Picasso", 95
+
+// In loops
+for i := 0; i < 10; i++ {
+    // i is scoped to the loop
+}
+```
+
+<Tip>
+The `:=` operator is idiomatic for local variables. Use `var` only when you need the zero value or explicit typing.
+</Tip>
+
+### Zero Values Are Useful
+
+```go
+var counter int        // 0
+var name string        // ""
+var ready bool         // false
+var items []string     // nil
+
+// Zero values are ready to use
+counter++              // counter is now 1
+items = append(items, "first")
+```
+
+## Loop Idioms
+
+### Range Over Collections
+
+<CodeGroup>
+```go Index and Value
+for i, v := range slice {
+    fmt.Printf("%d: %s\n", i, v)
+}
+```
+
+```go Value Only
+for _, v := range slice {
+    process(v)
+}
+```
+
+```go Index Only
+for i := range slice {
+    fmt.Println(i)
+}
+```
+
+```go Count Items (From 13-loops/questions/01-loops.md)
+var count int
+for range items {
+    count++
+}
+```
+</CodeGroup>
+
+### While-Style Loops
+
+```go From 13-loops
+// Go doesn't have while, use for
+for condition {
+    // Loop body
+}
+
+// Infinite loop
+for {
+    if shouldExit {
+        break
+    }
+}
+```
+
+### Continue and Break
+
+```go From 13-loops/questions/01-loops.md
+// Skip multiples of 3
+for i := 2; i <= 9; i++ {
+    if i % 3 != 0 {
+        continue
+    }
+    fmt.Println(i) // Prints: 3, 6, 9
+}
+```
+
+## Slice Idioms
+
+### Make with Capacity
+
+```go
+// When you know the size
+items := make([]string, 0, 100)
+
+// Reduces allocations
+for i := 0; i < 100; i++ {
+    items = append(items, fmt.Sprintf("item-%d", i))
+}
+```
+
+### Append Pattern
+
+```go From 16-slices
+// Append to nil slice (works!)
+var numbers []int
+numbers = append(numbers, 1, 2, 3)
+
+// Append another slice
+more := []int{4, 5, 6}
+numbers = append(numbers, more...)
+```
+
+### Slice Tricks
+
+<CodeGroup>
+```go Remove Element
+// Remove index i
+slice = append(slice[:i], slice[i+1:]...)
+```
+
+```go Insert Element
+// Insert at index i
+slice = append(slice[:i], append([]T{element}, slice[i:]...)...)
+```
+
+```go Clear Slice
+slice = slice[:0]  // Keep capacity
+slice = nil        // Release memory
+```
+</CodeGroup>
+
+<Warning>
+Remember: slices share backing arrays. Modifying a slice can affect other slices that reference the same array.
+</Warning>
+
+## String and Rune Idioms
+
+### String Iteration
+
+```go From 19-strings-runes-bytes
+// By runes (proper Unicode handling)
+for i, r := range str {
+    fmt.Printf("position %d: rune %c\n", i, r)
+}
+
+// By bytes
+for i := 0; i < len(str); i++ {
+    fmt.Printf("byte %d: %x\n", i, str[i])
+}
+```
+
+### String Building
+
+```go
+// For multiple concatenations, use strings.Builder
+var builder strings.Builder
+for _, word := range words {
+    builder.WriteString(word)
+    builder.WriteString(" ")
+}
+result := builder.String()
+```
+
+<Tip>
+Strings are immutable. Use `strings.Builder` for efficient string concatenation in loops.
+</Tip>
+
+## Map Idioms
+
+### Check Key Existence
+
+```go From 22-maps
+// The comma-ok idiom
+value, ok := myMap[key]
+if !ok {
+    // Key doesn't exist
+}
+
+// Or in one line
+if value, ok := myMap[key]; ok {
+    // Use value
+}
+```
+
+### Delete Pattern
+
+```go
+// Delete is safe even if key doesn't exist
+delete(myMap, key)
+```
+
+### Initialize Maps
+
+```go
+// Empty map
+m := make(map[string]int)
+
+// With literal
+m := map[string]int{
+    "alice": 25,
+    "bob":   30,
+}
+```
+
+## Struct Idioms
+
+### Constructor Functions
+
+```go From 24-structs
+type person struct {
+    name     string
+    age      int
+    email    string
+}
+
+// Constructor idiom
+func NewPerson(name string, age int) *person {
+    return &person{
+        name:  name,
+        age:   age,
+        email: fmt.Sprintf("%s@example.com", name),
+    }
+}
+
+// Usage
+p := NewPerson("Alice", 30)
+```
+
+### Embedding for Composition
+
+```go From 24-structs/04-embedding
+type Address struct {
+    Street string
+    City   string
+}
+
+type Person struct {
+    Name string
+    Address  // Embedded
+}
+
+// Access embedded fields directly
+p := Person{Name: "Alice"}
+p.Street = "123 Main St"  // Not p.Address.Street
+```
+
+## Pointer Idioms
+
+### Pointer Receivers vs Value Receivers
+
+```go From interfaces
+// Use pointer receiver when:
+// - Method modifies the receiver
+// - Receiver is large
+// - Consistency (if any method needs pointer, all should use it)
+
+func (p *Person) SetAge(age int) {
+    p.age = age  // Modifies original
+}
+
+// Use value receiver when:
+// - Method doesn't modify receiver
+// - Receiver is small (primitives, small structs)
+func (p Person) Age() int {
+    return p.age  // Safe to use value
+}
+```
+
+## Interface Idioms
+
+### Empty Interface
+
+```go From interfaces/06-empty-interface
+// Accept any type
+func Print(v interface{}) {
+    fmt.Println(v)
+}
+
+// Type assertion
+func ProcessValue(v interface{}) {
+    switch val := v.(type) {
+    case string:
+        fmt.Println("String:", val)
+    case int:
+        fmt.Println("Int:", val)
+    default:
+        fmt.Println("Unknown type")
+    }
+}
+```
+
+### Small Interfaces
+
+```go From interfaces
+// Prefer small, focused interfaces
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+
+// Compose larger interfaces
+type ReadWriter interface {
+    Reader
+    Writer
+}
+```
+
+<Info>
+The Go standard library demonstrates this: `io.Reader`, `io.Writer`, `io.Closer` are all single-method interfaces.
+</Info>
+
+## Type Switch Idiom
+
+```go From interfaces/07-type-switch
+func classify(v interface{}) {
+    switch v := v.(type) {
+    case string:
+        fmt.Printf("String of length %d\n", len(v))
+    case int:
+        fmt.Printf("Integer: %d\n", v)
+    case bool:
+        fmt.Printf("Boolean: %t\n", v)
+    default:
+        fmt.Printf("Unknown type: %T\n", v)
+    }
+}
+```
+
+## Defer Idiom
+
+```go
+// Clean up resources
+func processFile(filename string) error {
+    f, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer f.Close()  // Guaranteed to run
+    
+    // Process file
+    return process(f)
+}
+```
+
+<Note>
+`defer` executes when the function returns, making it perfect for cleanup. Multiple defers execute in LIFO order.
+</Note>
+
+## Initialization Idioms
+
+### Package Level Variables
+
+```go
+var (
+    // Initialize in order
+    config = loadConfig()
+    logger = newLogger(config)
+    db     = connectDB(config)
+)
+```
+
+### Init Function
+
+```go
+func init() {
+    // Runs automatically before main
+    registerHandlers()
+    validateConfig()
+}
+```
+
+## Constants with Iota
+
+```go From 10-constants
+type Weekday int
+
+const (
+    Sunday Weekday = iota  // 0
+    Monday                 // 1
+    Tuesday                // 2
+    Wednesday              // 3
+    Thursday               // 4
+    Friday                 // 5
+    Saturday               // 6
+)
+
+// Skip values
+const (
+    _ = iota  // Skip 0
+    KB = 1 << (10 * iota)  // 1024
+    MB                      // 1048576
+    GB                      // 1073741824
+)
+```
+
+## Blank Identifier `_`
+
+```go
+// Ignore return values
+_, err := doSomething()
+
+// Ignore range index
+for _, value := range slice {
+    process(value)
+}
+
+// Import for side effects
+import _ "github.com/lib/pq"
+
+// Verify interface implementation at compile time
+var _ io.Reader = (*MyReader)(nil)
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Best Practices" href="/reference/best-practices" icon="star">
+    Go best practices guide
+  </Card>
+  
+  <Card title="Design Patterns" href="/reference/design-patterns" icon="diagram-project">
+    Common design patterns
+  </Card>
+  
+  <Card title="Troubleshooting" href="/reference/troubleshooting" icon="wrench">
+    Common issues and solutions
+  </Card>
+  
+  <Card title="FAQ" href="/community/faq" icon="question">
+    Frequently asked questions
+  </Card>
+</CardGroup>

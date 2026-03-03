@@ -1,0 +1,408 @@
+---
+title: "Switch Statements"
+description: "Learn Go's switch statements with multiple cases, default clauses, boolean expressions, fallthrough, and when to use them"
+---
+
+Switch statements provide a clean way to write multiple if-else conditions. Go's switch is more powerful than in many other languages - it doesn't require break statements and supports flexible condition matching.
+
+## Basic Switch Statement
+
+A simple switch statement compares a value against multiple cases:
+
+```go
+city := "Paris"
+
+switch city {
+case "Paris":
+    fmt.Println("France")
+}
+```
+
+This is equivalent to:
+
+```go
+if city == "Paris" {
+    fmt.Println("France")
+}
+```
+
+<Note>
+Unlike many languages, Go's switch cases **automatically break** - no break statement needed!
+</Note>
+
+## Multiple Cases
+
+You can have multiple cases in a switch statement:
+
+```go
+city := os.Args[1]
+
+switch city {
+case "Paris":
+    fmt.Println("France")
+    // No break needed - automatically stops here
+case "Tokyo":
+    fmt.Println("Japan")
+}
+```
+
+This is cleaner than:
+
+```go
+if city == "Paris" {
+    fmt.Println("France")
+} else if city == "Tokyo" {
+    fmt.Println("Japan")
+}
+```
+
+## Default Clause
+
+The `default` clause handles all cases not explicitly matched:
+
+```go
+city := os.Args[1]
+
+switch city {
+case "Paris":
+    fmt.Println("France")
+case "Tokyo":
+    fmt.Println("Japan")
+default:
+    fmt.Println("Where?")
+}
+```
+
+<Warning>
+There can only be **one default clause** in a switch statement.
+</Warning>
+
+## Multiple Conditions Per Case
+
+You can test multiple values in a single case using comma-separated conditions:
+
+```go
+city := os.Args[1]
+
+switch city {
+case "Paris", "Lyon":
+    fmt.Println("France")
+case "Tokyo":
+    fmt.Println("Japan")
+}
+```
+
+This is equivalent to:
+
+```go
+if city == "Paris" || city == "Lyon" {
+    fmt.Println("France")
+} else if city == "Tokyo" {
+    fmt.Println("Japan")
+}
+```
+
+## Boolean Expression Switch
+
+You can omit the switch value and use boolean expressions in each case. This is excellent for complex conditions:
+
+```go
+i := 10
+
+switch {
+case i > 0:
+    fmt.Println("positive")
+case i < 0:
+    fmt.Println("negative")
+default:
+    fmt.Println("zero")
+}
+```
+
+This pattern replaces long if-else chains:
+
+```go
+if i > 0 {
+    fmt.Println("positive")
+} else if i < 0 {
+    fmt.Println("negative")
+} else {
+    fmt.Println("zero")
+}
+```
+
+### Practical Example: Time-Based Greeting
+
+```go
+switch h := time.Now().Hour(); {
+case h >= 18:  // 18 to 23
+    fmt.Println("good evening")
+case h >= 12:  // 12 to 18
+    fmt.Println("good afternoon")
+case h >= 6:   // 6 to 12
+    fmt.Println("good morning")
+default:       // 0 to 5
+    fmt.Println("good night")
+}
+```
+
+<Note>
+The order of cases matters! The switch statement executes the **first matching case** and stops.
+</Note>
+
+## Fallthrough
+
+By default, Go switch cases don't fall through to the next case. If you need this behavior, use the `fallthrough` keyword:
+
+```go
+i := 142
+
+switch {
+case i > 100:
+    fmt.Print("big ")
+    fallthrough
+case i > 0:
+    fmt.Print("positive ")
+    fallthrough
+default:
+    fmt.Print("number")
+}
+fmt.Println()
+
+// Output: big positive number
+```
+
+<Warning>
+Use `fallthrough` sparingly - it's rarely needed and can make code harder to understand.
+</Warning>
+
+## Short Switch Statement
+
+Like if statements, you can declare variables within the switch statement:
+
+```go
+switch i := 10; {
+case i > 0:
+    fmt.Println("positive")
+case i < 0:
+    fmt.Println("negative")
+default:
+    fmt.Println("zero")
+}
+// i is not available here
+```
+
+The variable `i` is scoped to the switch block only.
+
+### With Value Comparison
+
+```go
+switch city := os.Args[1]; city {
+case "Paris":
+    fmt.Println("France")
+case "Tokyo":
+    fmt.Println("Japan")
+default:
+    fmt.Println("Where?")
+}
+// city is not available here
+```
+
+## When to Use Switch vs If
+
+### Use Switch When:
+
+<CardGroup cols={2}>
+  <Card title="Multiple Equality Checks" icon="equals">
+    Comparing one value against many possibilities
+  </Card>
+  
+  <Card title="Range Checking" icon="arrows-left-right">
+    Testing values against different ranges (with boolean expressions)
+  </Card>
+  
+  <Card title="Cleaner Code" icon="broom">
+    Replacing long if-else chains for better readability
+  </Card>
+  
+  <Card title="State Machines" icon="gears">
+    Handling different states or modes in your application
+  </Card>
+</CardGroup>
+
+### Example: Value Matching
+
+```go
+// BETTER: Use switch
+switch color {
+case "red", "crimson", "scarlet":
+    fmt.Println("Red family")
+case "blue", "navy", "azure":
+    fmt.Println("Blue family")
+case "green", "emerald", "lime":
+    fmt.Println("Green family")
+default:
+    fmt.Println("Other color")
+}
+
+// WORSE: Long if-else chain
+if color == "red" || color == "crimson" || color == "scarlet" {
+    fmt.Println("Red family")
+} else if color == "blue" || color == "navy" || color == "azure" {
+    fmt.Println("Blue family")
+} else if color == "green" || color == "emerald" || color == "lime" {
+    fmt.Println("Green family")
+} else {
+    fmt.Println("Other color")
+}
+```
+
+### Example: Range Checking
+
+```go
+// BETTER: Switch with boolean expressions
+switch {
+case score >= 90:
+    fmt.Println("A")
+case score >= 80:
+    fmt.Println("B")
+case score >= 70:
+    fmt.Println("C")
+case score >= 60:
+    fmt.Println("D")
+default:
+    fmt.Println("F")
+}
+```
+
+## Practical Examples
+
+### Richter Scale
+
+```go
+magnitude := 6.5
+
+switch {
+case magnitude < 2.0:
+    fmt.Println("Micro earthquake")
+case magnitude < 3.0:
+    fmt.Println("Very minor")
+case magnitude < 4.0:
+    fmt.Println("Minor")
+case magnitude < 5.0:
+    fmt.Println("Light")
+case magnitude < 6.0:
+    fmt.Println("Moderate")
+case magnitude < 7.0:
+    fmt.Println("Strong")
+case magnitude < 8.0:
+    fmt.Println("Major")
+default:
+    fmt.Println("Great")
+}
+```
+
+### Command Processing
+
+```go
+cmd := os.Args[1]
+
+switch cmd {
+case "start", "run":
+    fmt.Println("Starting the application...")
+case "stop", "halt":
+    fmt.Println("Stopping the application...")
+case "restart":
+    fmt.Println("Restarting the application...")
+case "status":
+    fmt.Println("Application is running")
+default:
+    fmt.Printf("Unknown command: %s\n", cmd)
+}
+```
+
+### Days in Month
+
+```go
+month := "February"
+
+switch month {
+case "January", "March", "May", "July", "August", "October", "December":
+    fmt.Println("31 days")
+case "April", "June", "September", "November":
+    fmt.Println("30 days")
+case "February":
+    fmt.Println("28 or 29 days")
+default:
+    fmt.Println("Invalid month")
+}
+```
+
+## Switch vs If Comparison
+
+| Feature | Switch | If-Else |
+|---------|--------|---------|
+| Syntax | Cleaner for multiple cases | Can become verbose |
+| Auto-break | Yes (no break needed) | N/A |
+| Multiple conditions per branch | Yes (comma-separated) | Use `||` operator |
+| Boolean expressions | Yes (omit switch value) | Natural use case |
+| Variable declaration | Yes (short switch) | Yes (short if) |
+| Fallthrough | Requires explicit `fallthrough` | Natural behavior |
+
+## Best Practices
+
+<Steps>
+  <Step title="Choose switch for multiple value checks">
+    When comparing one variable against multiple values, switch is cleaner than if-else
+  </Step>
+  
+  <Step title="Order cases by likelihood">
+    Put most common cases first for better readability (though performance impact is negligible)
+  </Step>
+  
+  <Step title="Always include default">
+    Handle unexpected cases with a default clause for robustness
+  </Step>
+  
+  <Step title="Avoid fallthrough">
+    Use fallthrough only when absolutely necessary - it can make code harder to understand
+  </Step>
+  
+  <Step title="Use boolean expressions for ranges">
+    When checking ranges, use switch with boolean expressions instead of if-else chains
+  </Step>
+</Steps>
+
+## Key Differences from Other Languages
+
+<AccordionGroup>
+  <Accordion title="No Break Statements">
+    Go automatically breaks after each case - no break statement needed or allowed
+  </Accordion>
+  
+  <Accordion title="Any Type Comparison">
+    Switch works with any comparable type, not just integers
+  </Accordion>
+  
+  <Accordion title="Boolean Expression Mode">
+    Omitting the switch value allows pure boolean expressions in cases
+  </Accordion>
+  
+  <Accordion title="Multiple Values Per Case">
+    Use comma-separated values to match multiple conditions in one case
+  </Accordion>
+  
+  <Accordion title="Explicit Fallthrough">
+    Fallthrough must be explicitly requested with the fallthrough keyword
+  </Accordion>
+</AccordionGroup>
+
+## Key Takeaways
+
+- Switch statements automatically break - no break keyword needed
+- Multiple values can be tested in a single case using commas
+- Boolean expression switches (without a value) replace long if-else chains
+- Default clause handles all unmatched cases
+- Fallthrough is explicit and rarely needed
+- Short switch syntax allows variable declarations scoped to the switch block
+- Switch is often cleaner than if-else for multiple conditions

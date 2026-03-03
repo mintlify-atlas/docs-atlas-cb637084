@@ -1,0 +1,314 @@
+---
+title: "Install Go"
+description: "Step-by-step guide to installing Go on macOS, Windows, and Linux"
+---
+
+# Installing Go
+
+Get Go installed on your system and configure your development environment. Choose your operating system below to get started.
+
+<Tabs>
+  <Tab title="macOS">
+    ## Install Go on macOS
+
+    ### Quick Install with Homebrew
+
+    If you have [Homebrew](https://brew.sh) installed, you can easily install Go with these commands:
+
+    ```bash
+    # Install Git (if you don't have it)
+    brew install git
+
+    # Install Go
+    brew install go
+
+    # Add GOBIN path to your PATH in ~/.bash_profile or ~/.zshrc
+    export PATH=${HOME}/go/bin:$PATH
+    ```
+
+    ### Manual Installation
+
+    <Steps>
+      <Step title="Install Visual Studio Code">
+        1. Go to [https://code.visualstudio.com](https://code.visualstudio.com)
+        2. Select macOS and download
+        3. Uncompress the downloaded file
+        4. Move it to your `~/Applications` directory
+      </Step>
+
+      <Step title="Install Git">
+        1. Download from [https://git-scm.com/downloads](https://git-scm.com/downloads)
+        2. Run the installer
+        3. Select VSCode as the default editor
+      </Step>
+
+      <Step title="Install Go">
+        1. Go to [https://golang.org/dl](https://golang.org/dl)
+        2. Select macOS
+        3. Run the installer package
+      </Step>
+
+      <Step title="Configure VS Code">
+        1. Open VS Code
+        2. From the extensions tab, search for "go" and install the official Go extension
+        3. Close and reopen VS Code
+        
+        4. Open the Command Palette (`cmd+shift+p`)
+        5. Type: `go install`
+        6. Select **"Go: Install/Update Tools"**
+        7. Check all the checkboxes and install
+        
+        8. Open Command Palette again
+        9. Type: `shell`
+        10. Select: **"Install 'code' command in PATH"**
+      </Step>
+
+      <Step title="Verify Installation">
+        Open your terminal and run:
+        
+        ```bash
+        go version
+        ```
+        
+        You should see output like: `go version go1.x.x darwin/amd64`
+      </Step>
+    </Steps>
+
+  </Tab>
+
+  <Tab title="Windows">
+    ## Install Go on Windows
+
+    ### Quick Install with Chocolatey
+
+    If you have [Chocolatey](https://chocolatey.org/) installed:
+
+    ```powershell
+    choco install golang
+    ```
+
+    ### Manual Installation
+
+    <Steps>
+      <Step title="Install Visual Studio Code">
+        1. Go to [https://code.visualstudio.com](https://code.visualstudio.com)
+        2. Select Windows and download
+        3. Run the installer
+      </Step>
+
+      <Step title="Install Git">
+        1. Download from [https://gitforwindows.org](https://gitforwindows.org)
+        2. Run the installer
+        3. Select VSCode as the default editor
+        4. Enable all checkboxes
+        5. Select: **"Use Git from the Windows Command Prompt"**
+        6. For encodings, select: **"Checkout as is..."**
+      </Step>
+
+      <Step title="Install Go">
+        1. Go to [https://golang.org/dl](https://golang.org/dl)
+        2. Select Windows and download
+        3. Run the installer
+      </Step>
+
+      <Step title="Configure VS Code">
+        1. Open VS Code
+        2. From the extensions tab, search for "go" and install the official Go extension
+        3. Close and reopen VS Code
+        
+        4. Open the Command Palette (`ctrl+shift+p`)
+        5. Type: `go install`
+        6. Select **"Go: Install/Update Tools"**
+        7. Check all the checkboxes and install
+      </Step>
+
+      <Step title="Setup Git Bash (Recommended)">
+        Git Bash provides a better command-line experience on Windows with bash commands similar to macOS/Linux.
+        
+        1. Search for "Git Bash" from the start menu
+        2. In VS Code, open Command Palette
+        3. Type: `terminal`
+        4. Select: **"Terminal: Select Default Shell"**
+        5. Choose: **"Git Bash"**
+        
+        <Note>
+        When using Git Bash, your files are under `/c/` instead of `c:\` - it's the same directory, just different notation.
+        </Note>
+      </Step>
+
+      <Step title="Verify Installation">
+        Open Git Bash (or Command Prompt) and run:
+        
+        ```bash
+        go version
+        ```
+        
+        You should see output like: `go version go1.x.x windows/amd64`
+      </Step>
+    </Steps>
+
+    <Info>
+    You can also use [WSL (Windows Subsystem for Linux)](https://docs.microsoft.com/en-us/windows/wsl/install-win10) for a native Linux experience on Windows.
+    </Info>
+
+  </Tab>
+
+  <Tab title="Linux">
+    ## Install Go on Linux (Ubuntu)
+
+    ### Quick Install with Snap
+
+    The easiest way to install Go on Ubuntu:
+
+    ```bash
+    sudo snap install go --classic
+    ```
+
+    If you used snap, skip to the verification step below.
+
+    ### Manual Installation
+
+    <Steps>
+      <Step title="Update packages and install Git">
+        ```bash
+        # Update local packages
+        sudo apt-get update
+
+        # Install Git
+        sudo apt-get install git
+        ```
+      </Step>
+
+      <Step title="Download Go">
+        You can download Go in two ways:
+        
+        **Option 1: From the web**
+        ```bash
+        firefox https://golang.org/dl
+        ```
+        Select Linux and download the tar.gz file.
+        
+        **Option 2: Using snap (skip to step 4 if you use this)**
+        ```bash
+        sudo snap install go --classic
+        ```
+      </Step>
+
+      <Step title="Extract Go to /usr/local">
+        Find the downloaded file name and extract it:
+        
+        ```bash
+        # Replace 'goX.XX.X.linux-amd64.tar.gz' with your downloaded file
+        sudo tar -C /usr/local -xzf ~/Downloads/go*.linux-amd64.tar.gz
+        ```
+      </Step>
+
+      <Step title="Add Go to PATH">
+        Add Go executables to your PATH:
+        
+        ```bash
+        # Add Go binary directory
+        echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.profile
+
+        # Add your Go workspace bin directory
+        echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.profile
+
+        # Reload your profile
+        source ~/.profile
+        ```
+      </Step>
+
+      <Step title="Install Go Tools">
+        Install helpful development tools:
+        
+        ```bash
+        go install golang.org/x/tools/...@latest
+        ```
+        
+        <Note>
+        This creates a `~/go` directory where Go tools and your projects will live (when not using Go modules).
+        </Note>
+      </Step>
+
+      <Step title="Install VS Code (Optional)">
+        1. Open "Ubuntu Software" application
+        2. Search for "Visual Studio Code"
+        3. Click Install
+        
+        Then install the Go extension from the VS Code extensions marketplace.
+      </Step>
+
+      <Step title="Verify Installation">
+        ```bash
+        go version
+        ```
+        
+        You should see output like: `go version go1.x.x linux/amd64`
+      </Step>
+    </Steps>
+
+    ### Test Your Installation
+
+    Create a simple test program:
+
+    ```bash
+    # Create a test file
+    cat <<EOF > hello.go
+    package main
+
+    import "fmt"
+
+    func main() {
+        fmt.Println("hello gopher!")
+    }
+    EOF
+
+    # Run it
+    go run hello.go
+    ```
+
+    You should see: `hello gopher!`
+
+  </Tab>
+</Tabs>
+
+## Workspace Setup
+
+After installation, you'll want to organize your Go projects:
+
+<Note>
+With Go modules (Go 1.11+), you can create Go projects anywhere on your system. You don't need to follow the old GOPATH structure.
+</Note>
+
+### Recommended Structure
+
+```
+~/projects/
+  ├── learngo/          # Your learning projects
+  │   ├── hello/
+  │   ├── variables/
+  │   └── ...
+  └── myapp/            # Your own projects
+```
+
+### Create Your First Project Directory
+
+```bash
+# Create a projects directory
+mkdir -p ~/projects/learngo
+
+# Navigate to it
+cd ~/projects/learngo
+```
+
+## Next Steps
+
+Now that you have Go installed, you're ready to write your first program!
+
+<Card
+  title="Write Your First Program"
+  icon="rocket"
+  href="/quickstart"
+>
+  Learn how to create and run a simple Go program
+</Card>

@@ -1,0 +1,401 @@
+---
+title: "Slices"
+description: "Master Go slices - dynamic, flexible arrays that are the workhorses of Go data structures"
+---
+
+## Slices vs Arrays
+
+While arrays have a fixed length that's part of their type, slices are **dynamic** and **flexible**:
+
+```go
+// Array: length is part of the type
+var nums [5]int
+fmt.Printf("%T\n", nums)  // [5]int
+
+// Slice: length is not part of the type
+var nums []int
+fmt.Printf("%T\n", nums)  // []int
+
+fmt.Println(len(nums))  // 0 (nil slice)
+```
+
+<CardGroup cols={2}>
+  <Card title="Arrays" icon="lock">
+    - Fixed size
+    - Length is part of type
+    - Value semantics
+    - Less commonly used
+  </Card>
+  <Card title="Slices" icon="arrows-left-right">
+    - Dynamic size
+    - Length is separate from type
+    - Reference semantics
+    - Most commonly used
+  </Card>
+</CardGroup>
+
+## Declaring Slices
+
+### Nil Slices
+
+A declared but uninitialized slice is `nil` with length 0:
+
+```go
+var nums []int
+fmt.Printf("%#v\n", nums)  // []int(nil)
+fmt.Println(len(nums))     // 0
+fmt.Println(nums == nil)   // true
+```
+
+<Warning>
+You cannot index into a nil slice:
+```go
+var nums []int
+fmt.Println(nums[0])  // Panic: index out of range
+```
+</Warning>
+
+### Slice Literals
+
+Create slices with initial values using slice literals:
+
+```go
+nums := []int{1, 2, 3}
+fmt.Printf("%#v\n", nums)  // []int{1, 2, 3}
+
+// Empty slice (not nil)
+nums := []int{}
+fmt.Println(nums == nil)  // false
+fmt.Println(len(nums))    // 0
+```
+
+### Using make()
+
+Create slices with a specific length and capacity:
+
+```go
+// Length 5, capacity 5
+nums := make([]int, 5)
+fmt.Println(nums)  // [0 0 0 0 0]
+
+// Length 3, capacity 5
+nums := make([]int, 3, 5)
+fmt.Println(len(nums))  // 3
+fmt.Println(cap(nums))  // 5
+```
+
+## The append() Function
+
+The `append()` function adds elements to a slice and returns a new slice:
+
+```go
+nums := []int{1, 2, 3}
+fmt.Println(nums)  // [1 2 3]
+
+// append() returns a new slice - must assign it back
+nums = append(nums, 4)
+fmt.Println(nums)  // [1 2 3 4]
+
+// Append multiple elements
+nums = append(nums, 5, 6, 7)
+fmt.Println(nums)  // [1 2 3 4 5 6 7]
+
+// Append another slice using ...
+tens := []int{10, 11, 12}
+nums = append(nums, tens...)
+fmt.Println(nums)  // [1 2 3 4 5 6 7 10 11 12]
+```
+
+<Warning>
+Always assign the result of `append()` back to your slice:
+```go
+nums := []int{1, 2, 3}
+append(nums, 4)      // Wrong: result is lost
+nums = append(nums, 4)  // Correct
+```
+</Warning>
+
+## Slice Expressions
+
+Slice expressions create new slices from existing arrays or slices:
+
+```go
+msg := []byte{'h', 'e', 'l', 'l', 'o'}
+
+// Syntax: slice[low:high]
+fmt.Printf("%s\n", msg[0:1])  // "h"
+fmt.Printf("%s\n", msg[0:3])  // "hel"
+fmt.Printf("%s\n", msg[1:4])  // "ell"
+fmt.Printf("%s\n", msg[0:5])  // "hello"
+
+// Default indices
+fmt.Printf("%s\n", msg[0:])   // "hello" (low defaults to 0)
+fmt.Printf("%s\n", msg[:5])   // "hello" (high defaults to len)
+fmt.Printf("%s\n", msg[:])    // "hello" (both default)
+
+// From middle to end
+fmt.Printf("%s\n", msg[1:])   // "ello"
+```
+
+### Practical Example: Pagination
+
+```go
+items := []string{"item1", "item2", "item3", "item4", "item5"}
+
+// Page 1: items 0-2
+page1 := items[0:3]
+fmt.Println(page1)  // [item1 item2 item3]
+
+// Page 2: items 3-5
+page2 := items[3:]
+fmt.Println(page2)  // [item4 item5]
+```
+
+## Slice Internals
+
+### The Backing Array
+
+Every slice is backed by an underlying array. Slices are just a "window" into this array:
+
+```go
+ages := []int{35, 15, 25}
+// ages is a slice with:
+// - pointer to backing array: [35, 15, 25]
+// - length: 3
+// - capacity: 3
+```
+
+### Slice Header
+
+A slice consists of three components:
+
+1. **Pointer** to the first element in the backing array
+2. **Length** (`len`) - number of elements in the slice
+3. **Capacity** (`cap`) - number of elements in the backing array (from the slice's start)
+
+```go
+nums := make([]int, 3, 5)
+fmt.Println(len(nums))  // 3 - current length
+fmt.Println(cap(nums))  // 5 - capacity of backing array
+```
+
+### Length vs Capacity
+
+```go
+ages := make([]int, 3, 5)
+
+fmt.Println(len(ages))  // 3 - can access ages[0] through ages[2]
+fmt.Println(cap(ages))  // 5 - backing array has room for 5 elements
+
+// You can extend the slice within its capacity
+ages = ages[:5]
+fmt.Println(len(ages))  // 5 - now using full capacity
+```
+
+<Note>
+**Length** is what you can access right now. **Capacity** is how much room is available in the backing array.
+</Note>
+
+### How append() Works
+
+When you append to a slice:
+
+1. If there's capacity, `append()` uses the backing array
+2. If capacity is full, `append()` creates a new, larger backing array and copies elements
+
+```go
+nums := []int{1, 2, 3}
+// Let's say: len=3, cap=3
+
+nums = append(nums, 4)
+// If cap was full: Go creates new array, usually 2x size
+// New backing array allocated, elements copied
+// len=4, cap=6 (approximately)
+
+nums = append(nums, 5)
+// Capacity available, uses existing backing array
+// len=5, cap=6
+```
+
+## Slices Share Backing Arrays
+
+Multiple slices can reference the same backing array:
+
+```go
+original := []int{1, 2, 3, 4, 5}
+slice1 := original[0:3]  // [1 2 3]
+slice2 := original[2:5]  // [3 4 5]
+
+// Modifying slice1 affects slice2
+slice1[2] = 100
+
+fmt.Println(slice1)    // [1 2 100]
+fmt.Println(slice2)    // [100 4 5]
+fmt.Println(original)  // [1 2 100 4 5]
+```
+
+<Warning>
+Be careful when modifying slices - changes may affect other slices sharing the same backing array.
+</Warning>
+
+## Advanced append() Patterns
+
+### Inserting in the Middle
+
+```go
+nums := []int{1, 3, 2, 4}
+
+// Goal: insert 7 and 9 between 3 and 2
+// Result: [1 3 7 9 2 4]
+
+// Step 1: Make room by appending the tail
+nums = append(nums, nums[2:]...)  // [1 3 2 4 2 4]
+
+// Step 2: Overwrite with new values
+nums = append(nums[:2], 7, 9)     // [1 3 7 9]
+
+// Step 3: Extend to include saved tail
+nums = nums[:6]                    // [1 3 7 9 2 4]
+```
+
+### Deleting Elements
+
+```go
+nums := []int{1, 2, 3, 4, 5}
+
+// Delete element at index 2 (value 3)
+nums = append(nums[:2], nums[3:]...)
+fmt.Println(nums)  // [1 2 4 5]
+```
+
+## Copying Slices
+
+Use the built-in `copy()` function to copy elements between slices:
+
+```go
+src := []int{1, 2, 3}
+dst := make([]int, len(src))
+
+n := copy(dst, src)
+fmt.Println(n)    // 3 (number of elements copied)
+fmt.Println(dst)  // [1 2 3]
+
+// Modifying dst doesn't affect src
+dst[0] = 100
+fmt.Println(src)  // [1 2 3]
+fmt.Println(dst)  // [100 2 3]
+```
+
+## Converting Between Arrays and Slices
+
+```go
+// Array to slice
+arr := [3]int{1, 2, 3}
+slice := arr[:]
+fmt.Printf("%T\n", slice)  // []int
+
+// Slice to array (Go 1.20+)
+slice := []int{1, 2, 3}
+arr := [3]int(slice)
+fmt.Printf("%T\n", arr)  // [3]int
+```
+
+## Common Patterns
+
+### Filtering
+
+```go
+nums := []int{1, 2, 3, 4, 5, 6}
+var evens []int
+
+for _, num := range nums {
+    if num%2 == 0 {
+        evens = append(evens, num)
+    }
+}
+fmt.Println(evens)  // [2 4 6]
+```
+
+### Unique Elements
+
+```go
+nums := []int{1, 2, 2, 3, 3, 3, 4}
+unique := []int{}
+seen := make(map[int]bool)
+
+for _, num := range nums {
+    if !seen[num] {
+        seen[num] = true
+        unique = append(unique, num)
+    }
+}
+fmt.Println(unique)  // [1 2 3 4]
+```
+
+### Pre-allocating for Performance
+
+```go
+// Bad: slice grows dynamically (many allocations)
+var nums []int
+for i := 0; i < 1000; i++ {
+    nums = append(nums, i)
+}
+
+// Good: pre-allocate capacity (one allocation)
+nums := make([]int, 0, 1000)
+for i := 0; i < 1000; i++ {
+    nums = append(nums, i)
+}
+```
+
+## Nil vs Empty Slices
+
+```go
+// Nil slice
+var nilSlice []int
+fmt.Println(nilSlice == nil)  // true
+fmt.Println(len(nilSlice))    // 0
+
+// Empty slice (not nil)
+emptySlice := []int{}
+fmt.Println(emptySlice == nil)  // false
+fmt.Println(len(emptySlice))    // 0
+
+// Both behave the same in most cases
+nilSlice = append(nilSlice, 1)      // Works
+emptySlice = append(emptySlice, 1)  // Works
+```
+
+<Note>
+For most purposes, nil and empty slices behave identically. Prefer nil slices as they don't allocate memory.
+</Note>
+
+## Key Takeaways
+
+<AccordionGroup>
+  <Accordion title="Dynamic Size">
+    Slices grow and shrink dynamically. Use `append()` to add elements.
+  </Accordion>
+  
+  <Accordion title="Reference Type">
+    Slices are references to backing arrays. Multiple slices can share the same backing array.
+  </Accordion>
+  
+  <Accordion title="Three Components">
+    Every slice has a pointer to a backing array, a length, and a capacity.
+  </Accordion>
+  
+  <Accordion title="Always Assign append()">
+    Always assign the result of `append()` back: `slice = append(slice, elem)`
+  </Accordion>
+  
+  <Accordion title="Pre-allocate When Possible">
+    Use `make([]T, 0, capacity)` when you know the approximate size for better performance.
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Arrays](/data-structures/arrays) - Fixed-size collections
+- [Maps](/data-structures/maps) - Key-value data structures
+- [Strings, Runes, and Bytes](/data-structures/strings-runes-bytes) - Text handling in Go

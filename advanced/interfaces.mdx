@@ -1,0 +1,674 @@
+---
+title: 'Interfaces'
+description: 'Master Go interfaces, polymorphism, type assertions, and build flexible, maintainable code'
+---
+
+## What are Interfaces?
+
+Interfaces in Go define behavior - they specify *what* a type can do, not *how* it does it. An interface is a collection of method signatures. Any type that implements all the methods in an interface automatically satisfies that interface.
+
+Unlike other languages, Go uses **implicit implementation** - you don't need to explicitly declare that a type implements an interface.
+
+## Basic Interface Syntax
+
+```go Defining and Using Interfaces
+type printer interface {
+    print()
+}
+
+type book struct {
+    title string
+    price money
+}
+
+// book implements printer because it has a print() method
+func (b book) print() {
+    fmt.Printf("%-15s: %s\n", b.title, b.price.string())
+}
+
+type game struct {
+    title string
+    price money
+}
+
+// game implements printer too
+func (g *game) print() {
+    fmt.Printf("%-15s: %s\n", g.title, g.price.string())
+}
+```
+
+<Note>
+There's no `implements` keyword in Go. A type implements an interface simply by implementing all of its methods.
+</Note>
+
+## Using Interfaces for Polymorphism
+
+Interfaces enable you to write functions that work with any type that implements the required behavior:
+
+<CodeGroup>
+
+```go Before Interfaces
+type list []*game  // Can only hold games
+
+func (l list) print() {
+    for _, it := range l {
+        it.print()
+    }
+}
+
+func main() {
+    var store list
+    store = append(store, &minecraft, &tetris)
+    store.print()
+    // Can't add books or other types!
+}
+```
+
+```go With Interfaces
+type printer interface {
+    print()
+}
+
+type list []printer  // Can hold ANY type that can print
+
+func (l list) print() {
+    if len(l) == 0 {
+        fmt.Println("Sorry. We're waiting for delivery 🚚.")
+        return
+    }
+    
+    for _, it := range l {
+        it.print()  // Works for any printer
+    }
+}
+
+func main() {
+    var store list
+    // Can mix different types!
+    store = append(store, &minecraft, &tetris, mobydick, rubik)
+    store.print()
+}
+```
+
+</CodeGroup>
+
+This is powerful because:
+- `list` can hold **any** type that implements `printer`
+- You can add new types without changing `list`
+- The code is more flexible and maintainable
+
+## Interface Values
+
+Interface values hold two things internally:
+1. The **concrete value**
+2. The **type** of that value
+
+```go Interface Internals
+var p printer
+
+p = book{title: "Go Programming", price: 29.99}
+// p now holds: (value: book{...}, type: book)
+
+p = &game{title: "Chess", price: 9.99}
+// p now holds: (value: *game{...}, type: *game)
+```
+
+### Interface Comparability
+
+Interface values are comparable if the underlying dynamic type is comparable:
+
+```go Comparing Interfaces
+var store list
+store = append(store, &minecraft, &tetris, mobydick, rubik)
+
+fmt.Println(store[0] == &minecraft) // true
+fmt.Println(store[2] == mobydick)   // true
+```
+
+## The Empty Interface
+
+The empty interface `interface{}` (or `any` in Go 1.18+) specifies zero methods, so every type implements it:
+
+```go Empty Interface
+func describe(i interface{}) {
+    fmt.Printf("Type: %T, Value: %v\n", i, i)
+}
+
+func main() {
+    describe(42)           // Type: int, Value: 42
+    describe("hello")      // Type: string, Value: hello
+    describe(true)         // Type: bool, Value: true
+    describe([]int{1,2,3}) // Type: []int, Value: [1 2 3]
+}
+```
+
+In Go 1.18+, you can use `any` instead of `interface{}`:
+
+```go Using Any
+func describe(i any) {
+    fmt.Printf("Type: %T, Value: %v\n", i, i)
+}
+```
+
+<Warning>
+The empty interface can hold any value, but you lose type safety. Use it sparingly and prefer specific interfaces when possible.
+</Warning>
+
+## Type Assertions
+
+Type assertions let you access the concrete value inside an interface:
+
+<CodeGroup>
+
+```go Basic Type Assertion
+var p printer = book{title: "Go", price: 29.99}
+
+// Type assertion
+b := p.(book)
+fmt.Println(b.title) // "Go"
+
+// This would panic if p doesn't hold a book!
+// g := p.(game) // panic: interface holds book, not game
+```
+
+```go Safe Type Assertion
+var p printer = book{title: "Go", price: 29.99}
+
+// Two-value assertion
+b, ok := p.(book)
+if ok {
+    fmt.Println("It's a book:", b.title)
+} else {
+    fmt.Println("Not a book")
+}
+
+// Check for game
+g, ok := p.(*game)
+if ok {
+    g.discount(0.1)
+} else {
+    fmt.Println("Not a game, can't discount")
+}
+```
+
+</CodeGroup>
+
+<Info>
+Always use the two-value form `value, ok := i.(Type)` unless you're absolutely certain of the type, to avoid panics.
+</Info>
+
+## Type Switches
+
+Type switches provide a clean way to handle different types:
+
+```go Type Switch
+func classify(i interface{}) {
+    switch v := i.(type) {
+    case book:
+        fmt.Printf("Book: %s\n", v.title)
+    case *game:
+        fmt.Printf("Game: %s (can discount)\n", v.title)
+        v.discount(0.1)
+    case puzzle:
+        fmt.Printf("Puzzle: %s\n", v.title)
+    case nil:
+        fmt.Println("Nothing here!")
+    default:
+        fmt.Printf("Unknown type: %T\n", v)
+    }
+}
+
+func main() {
+    classify(book{title: "Moby Dick", price: 10})
+    classify(&game{title: "Chess", price: 15})
+    classify(puzzle{title: "Rubik's Cube", price: 5})
+    classify(nil)
+    classify(42)
+}
+```
+
+Output:
+```
+Book: Moby Dick
+Game: Chess (can discount)
+Puzzle: Rubik's Cube
+Nothing here!
+Unknown type: int
+```
+
+## Common Standard Library Interfaces
+
+Go's standard library defines many useful interfaces:
+
+<Tabs>
+  <Tab title="io.Reader">
+    ```go io.Reader
+    type Reader interface {
+        Read(p []byte) (n int, err error)
+    }
+    
+    // Many types implement Reader: files, network connections,
+    // buffers, compression streams, etc.
+    
+    func processData(r io.Reader) error {
+        data := make([]byte, 1024)
+        n, err := r.Read(data)
+        if err != nil {
+            return err
+        }
+        // Process data[:n]
+        return nil
+    }
+    
+    // Works with any Reader!
+    processData(file)
+    processData(networkConnection)
+    processData(bytes.NewReader(data))
+    ```
+  </Tab>
+  
+  <Tab title="io.Writer">
+    ```go io.Writer
+    type Writer interface {
+        Write(p []byte) (n int, err error)
+    }
+    
+    func save(w io.Writer, data []byte) error {
+        _, err := w.Write(data)
+        return err
+    }
+    
+    // Works with files, network, buffers, etc.
+    save(file, data)
+    save(networkConnection, data)
+    save(&bytes.Buffer{}, data)
+    ```
+  </Tab>
+  
+  <Tab title="fmt.Stringer">
+    ```go fmt.Stringer
+    type Stringer interface {
+        String() string
+    }
+    
+    type money float64
+    
+    func (m money) String() string {
+        return fmt.Sprintf("$%.2f", m)
+    }
+    
+    // fmt.Println automatically calls String()
+    m := money(19.99)
+    fmt.Println(m) // $19.99
+    ```
+  </Tab>
+  
+  <Tab title="sort.Interface">
+    ```go sort.Interface
+    type Interface interface {
+        Len() int
+        Less(i, j int) bool
+        Swap(i, j int)
+    }
+    
+    type ByPrice []game
+    
+    func (b ByPrice) Len() int           { return len(b) }
+    func (b ByPrice) Less(i, j int) bool { return b[i].price < b[j].price }
+    func (b ByPrice) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+    
+    games := []game{...}
+    sort.Sort(ByPrice(games))
+    ```
+  </Tab>
+</Tabs>
+
+## Interface Composition
+
+You can compose interfaces from other interfaces:
+
+```go Interface Composition
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+
+type Closer interface {
+    Close() error
+}
+
+// Composed interfaces
+type ReadWriter interface {
+    Reader
+    Writer
+}
+
+type ReadWriteCloser interface {
+    Reader
+    Writer
+    Closer
+}
+
+// Any type implementing all methods satisfies the interface
+type File struct {
+    // ...
+}
+
+func (f *File) Read(p []byte) (n int, err error)  { /* ... */ return }
+func (f *File) Write(p []byte) (n int, err error) { /* ... */ return }
+func (f *File) Close() error                      { /* ... */ return }
+
+// File automatically implements ReadWriteCloser
+```
+
+## Practical Example: Power Socket
+
+Here's a real-world example showing interface flexibility:
+
+```go power/socket.go
+package main
+
+type Appliance interface {
+    TurnOn()
+    TurnOff()
+}
+
+type Socket struct {
+    connected Appliance
+}
+
+func (s *Socket) Connect(a Appliance) {
+    s.connected = a
+}
+
+func (s *Socket) PowerOn() {
+    if s.connected != nil {
+        s.connected.TurnOn()
+    }
+}
+
+func (s *Socket) PowerOff() {
+    if s.connected != nil {
+        s.connected.TurnOff()
+    }
+}
+```
+
+```go power/kettle.go
+type Kettle struct {
+    heating bool
+}
+
+func (k *Kettle) TurnOn() {
+    k.heating = true
+    fmt.Println("Kettle: Heating water...")
+}
+
+func (k *Kettle) TurnOff() {
+    k.heating = false
+    fmt.Println("Kettle: Stopped heating")
+}
+```
+
+```go power/blender.go
+type Blender struct {
+    blending bool
+}
+
+func (b *Blender) TurnOn() {
+    b.blending = true
+    fmt.Println("Blender: Blending...")
+}
+
+func (b *Blender) TurnOff() {
+    b.blending = false
+    fmt.Println("Blender: Stopped blending")
+}
+```
+
+```go power/main.go
+func main() {
+    socket := &Socket{}
+    
+    kettle := &Kettle{}
+    socket.Connect(kettle)
+    socket.PowerOn()
+    socket.PowerOff()
+    
+    blender := &Blender{}
+    socket.Connect(blender)
+    socket.PowerOn()
+    socket.PowerOff()
+}
+```
+
+This shows how interfaces enable **dependency inversion** - the `Socket` doesn't need to know about specific appliance types.
+
+## Interface Design Best Practices
+
+<AccordionGroup>
+
+<Accordion title="Keep Interfaces Small">
+**Prefer small, focused interfaces:**
+
+```go Good: Small Interfaces
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+
+// Compose when needed
+type ReadWriter interface {
+    Reader
+    Writer
+}
+```
+
+The smaller the interface, the more useful and flexible it is.
+</Accordion>
+
+<Accordion title="Accept Interfaces, Return Concrete Types">
+```go Best Practice
+// Good: Accept interface
+func Process(r io.Reader) error {
+    // ...
+    return nil
+}
+
+// Good: Return concrete type
+func NewReader(filename string) (*os.File, error) {
+    return os.Open(filename)
+}
+
+// Bad: Return interface (limits future changes)
+func NewReader(filename string) (io.Reader, error) {
+    return os.Open(filename)
+}
+```
+</Accordion>
+
+<Accordion title="Define Interfaces at Usage Point">
+Define interfaces where they're used, not where they're implemented:
+
+```go Where to Define
+// package consumer
+type DataReader interface {
+    Read() ([]byte, error)
+}
+
+func ProcessData(r DataReader) {
+    // Use the interface
+}
+
+// package provider
+type FileReader struct{}
+
+// Implicitly implements consumer.DataReader
+func (f *FileReader) Read() ([]byte, error) {
+    // Implementation
+    return nil, nil
+}
+```
+</Accordion>
+
+</AccordionGroup>
+
+## Method Sets and Pointer Receivers
+
+The receiver type matters for interface satisfaction:
+
+```go Pointer vs Value
+type Printer interface {
+    Print()
+}
+
+type Document struct {
+    content string
+}
+
+// Pointer receiver
+func (d *Document) Print() {
+    fmt.Println(d.content)
+}
+
+func Display(p Printer) {
+    p.Print()
+}
+
+func main() {
+    d := Document{content: "Hello"}
+    
+    // Display(d)  // ✗ Error: Document doesn't implement Printer
+    Display(&d) // ✓ Works: *Document implements Printer
+    
+    // However, this works due to auto-addressing:
+    d.Print() // ✓ Works: Go converts to (&d).Print()
+}
+```
+
+<Warning>
+**Rule:** If an interface method has a pointer receiver, only pointers to that type satisfy the interface.
+
+If an interface method has a value receiver, both values and pointers satisfy the interface.
+</Warning>
+
+## The nil Interface Value
+
+Be careful with nil interface values:
+
+```go Nil Interface Gotcha
+var p printer
+fmt.Println(p == nil) // true - uninitialized interface
+
+var g *game
+p = g
+fmt.Println(p == nil) // false! - interface holds (*game, nil)
+fmt.Println(g == nil) // true
+
+// Calling methods on nil pointer receiver might work
+// if the method handles it:
+p.print() // Might panic or might work depending on implementation
+```
+
+<Info>
+An interface is nil only if both its type and value are nil. An interface holding a nil pointer is not a nil interface.
+</Info>
+
+## Common Patterns
+
+### Optional Behavior
+
+```go Optional Methods
+type BasicPrinter interface {
+    Print()
+}
+
+type ColorPrinter interface {
+    BasicPrinter
+    PrintColor(color string)
+}
+
+func display(p BasicPrinter) {
+    p.Print()
+    
+    // Check if p also supports color
+    if cp, ok := p.(ColorPrinter); ok {
+        cp.PrintColor("red")
+    }
+}
+```
+
+### Interface Upgrading
+
+```go Capability Detection
+func save(w io.Writer, data []byte) error {
+    // Check if writer supports WriteTo for efficiency
+    if wt, ok := w.(io.WriterTo); ok {
+        _, err := wt.WriteTo(targetWriter)
+        return err
+    }
+    
+    // Fallback to regular Write
+    _, err := w.Write(data)
+    return err
+}
+```
+
+## Testing with Interfaces
+
+Interfaces make testing easier through mocking:
+
+```go Test Doubles
+// Production code
+type UserService struct {
+    db Database
+}
+
+type Database interface {
+    GetUser(id int) (*User, error)
+    SaveUser(u *User) error
+}
+
+// Test code
+type MockDatabase struct {
+    users map[int]*User
+}
+
+func (m *MockDatabase) GetUser(id int) (*User, error) {
+    return m.users[id], nil
+}
+
+func (m *MockDatabase) SaveUser(u *User) error {
+    m.users[u.ID] = u
+    return nil
+}
+
+func TestUserService(t *testing.T) {
+    mock := &MockDatabase{users: make(map[int]*User)}
+    service := &UserService{db: mock}
+    // Test using the mock
+}
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Methods and Receivers" icon="function" href="/advanced/methods">
+    How methods enable interface implementation
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">
+    The error interface and custom errors
+  </Card>
+  <Card title="Structs" icon="cube" href="/data-structures/structs">
+    Creating types that implement interfaces
+  </Card>
+  <Card title="Pointers" icon="location-dot" href="/advanced/pointers">
+    Understanding pointer receivers
+  </Card>
+</CardGroup>

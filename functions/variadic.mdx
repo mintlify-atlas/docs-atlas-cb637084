@@ -1,0 +1,381 @@
+---
+title: 'Variadic Functions'
+description: 'Learn how to create functions that accept variable numbers of arguments using Go variadic parameters'
+---
+
+## Introduction
+
+Variadic functions accept a variable number of arguments of the same type. This powerful feature allows you to write flexible APIs and work with collections of values without explicitly creating slices.
+
+The most familiar example is `fmt.Println`, which can accept any number of arguments:
+
+```go
+fmt.Println("Hello")           // 1 argument
+fmt.Println("Hello", "World")  // 2 arguments
+fmt.Println(1, 2, 3, 4, 5)     // 5 arguments
+```
+
+## Syntax
+
+Variadic parameters are declared using the `...` operator before the parameter type:
+
+```go
+func functionName(params ...Type) {
+    // params is treated as a []Type slice inside the function
+}
+```
+
+<Note>
+The variadic parameter must be the **last parameter** in the function signature. You can have other parameters before it, but not after.
+</Note>
+
+## Basic Example
+
+Here's a simple variadic function that calculates the sum of numbers:
+
+```go
+func sum(nums ...int) (total int) {
+    for _, n := range nums {
+        total += n
+    }
+    return
+}
+```
+
+The `nums` parameter behaves like a slice inside the function, allowing you to iterate over it with `range`.
+
+## Calling Variadic Functions
+
+### Passing Individual Arguments
+
+You can pass any number of arguments directly:
+
+```go
+n := avg(2, 3, 7)
+fmt.Printf("avg(2, 3, 7)    : %d\n", n) // Output: avg(2, 3, 7)    : 4
+
+n = avg(2, 3, 7, 8)
+fmt.Printf("avg(2, 3, 7, 8) : %d\n", n) // Output: avg(2, 3, 7, 8) : 5
+```
+
+### Passing a Slice with `...`
+
+If you already have a slice, use `...` to expand it into individual arguments:
+
+```go
+nums := []int{2, 3, 7}
+n := avg(nums...)
+fmt.Printf("avg(nums...)    : %d\n", n) // Output: avg(nums...)    : 4
+```
+
+<Warning>
+Don't forget the `...` when passing a slice! Calling `avg(nums)` without the ellipsis will cause a compile error.
+</Warning>
+
+### Calling with No Arguments
+
+Variadic functions can be called with zero arguments:
+
+```go
+func investigate(msg string, nums ...int) {
+    fmt.Printf("investigate.nums: %12p  ->  %s\n", nums, msg)
+    
+    if len(nums) > 0 {
+        fmt.Printf("\tfirst element: %d\n", nums[0])
+    }
+}
+
+investigate("no args") // Valid! nums will be nil
+```
+
+## Variadic vs Regular Slice Parameters
+
+### Regular Slice Parameter
+
+```go
+func avgNoVariadic(nums []int) int {
+    return sum(nums) / len(nums)
+}
+
+// Must always pass a slice
+nums := []int{2, 3, 7}
+result := avgNoVariadic(nums)
+```
+
+### Variadic Parameter
+
+```go
+func avg(nums ...int) int {
+    return sum(nums) / len(nums)
+}
+
+// Can pass individual values OR a slice with ...
+result := avg(2, 3, 7)      // individual arguments
+result = avg(nums...)       // slice expansion
+```
+
+<Tip>
+Use variadic parameters when you want to provide a convenient API that works with both individual values and slices. Use regular slice parameters when you always expect a pre-existing slice.
+</Tip>
+
+## Memory and Performance
+
+### Slice Creation
+
+When you pass individual arguments, Go creates a new slice to hold them:
+
+```go
+investigate("passes args", 4, 6, 14)
+// Creates a new slice: []int{4, 6, 14}
+```
+
+### Slice Reuse
+
+When you pass an existing slice with `...`, Go can reuse that slice:
+
+```go
+nums := []int{2, 3, 7}
+fmt.Printf("main.nums       : %p\n", nums)
+investigate("passes main.nums", nums...)
+// Uses the existing slice, same memory address
+```
+
+### Nil Slice for Zero Arguments
+
+When called with no arguments, the variadic parameter is a nil slice:
+
+```go
+investigate("no args")
+// nums is nil inside the function
+```
+
+## Modifying Variadic Parameters
+
+Since variadic parameters behave like slices, you can modify their elements:
+
+```go
+func double(nums ...int) {
+    for i := range nums {
+        nums[i] *= 2
+    }
+}
+
+nums := []int{2, 3, 7}
+double(nums...)
+fmt.Printf("double(nums...) : %d\n", nums) // Output: [4 6 14]
+
+// When passing individual values, modifications don't affect anything
+double(4, 6, 14)
+fmt.Printf("double(4, 6, 14): %d\n", nums) // Output: [4 6 14] (unchanged)
+```
+
+<Note>
+Like all parameters in Go, the slice header is passed by value. However, the underlying array can be modified through the slice. Changes to elements are visible to the caller when using `...` with an existing slice.
+</Note>
+
+## Practical Examples
+
+### Calculating Average
+
+```go
+func avg(nums ...int) int {
+    if len(nums) == 0 {
+        return 0
+    }
+    return sum(nums) / len(nums)
+}
+
+func sum(nums []int) (total int) {
+    for _, n := range nums {
+        total += n
+    }
+    return
+}
+
+// Usage
+fmt.Println(avg(2, 3, 7))        // Output: 4
+fmt.Println(avg(10, 20, 30, 40)) // Output: 25
+```
+
+### Logging with Context
+
+```go
+func logWithContext(level string, messages ...string) {
+    timestamp := time.Now().Format("2006-01-02 15:04:05")
+    fmt.Printf("[%s] %s: ", timestamp, level)
+    for i, msg := range messages {
+        if i > 0 {
+            fmt.Print(" | ")
+        }
+        fmt.Print(msg)
+    }
+    fmt.Println()
+}
+
+// Usage
+logWithContext("INFO", "Server started", "Port: 8080")
+logWithContext("ERROR", "Database connection failed", "Retrying in 5s", "Attempt 1/3")
+```
+
+### Building SQL Queries
+
+```go
+func buildWHERE(conditions ...string) string {
+    if len(conditions) == 0 {
+        return ""
+    }
+    return "WHERE " + strings.Join(conditions, " AND ")
+}
+
+// Usage
+where := buildWHERE("age > 18", "country = 'USA'", "active = true")
+// Result: WHERE age > 18 AND country = 'USA' AND active = true
+```
+
+## Combining Regular and Variadic Parameters
+
+Variadic parameters can be combined with regular parameters, but must come last:
+
+```go
+func investigate(msg string, nums ...int) {
+    fmt.Printf("Message: %s\n", msg)
+    fmt.Printf("Numbers: %v\n", nums)
+}
+
+investigate("Processing", 1, 2, 3)
+// Message: Processing
+// Numbers: [1 2 3]
+```
+
+<Warning>
+This is **invalid** syntax:
+```go
+// ERROR: variadic parameter must be last
+func invalid(nums ...int, msg string) {
+}
+```
+</Warning>
+
+## Variadic Functions in the Standard Library
+
+Go's standard library makes extensive use of variadic functions:
+
+### fmt Package
+
+```go
+fmt.Println(args ...interface{})
+fmt.Printf(format string, args ...interface{})
+fmt.Sprintf(format string, args ...interface{})
+```
+
+### append Function
+
+```go
+slice = append(slice, elements...)
+```
+
+### strings.Join
+
+```go
+result := strings.Join([]string{"a", "b", "c"}, ",")
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use for Similar Items" icon="list">
+    Variadic parameters work best when all arguments serve the same purpose and have the same type.
+  </Card>
+  
+  <Card title="Check for Empty" icon="circle-exclamation">
+    Always check if the variadic parameter is empty before accessing elements to avoid panics.
+  </Card>
+  
+  <Card title="Document Behavior" icon="book">
+    Clearly document what happens when zero arguments are passed to your variadic function.
+  </Card>
+  
+  <Card title="Consider Type Safety" icon="lock">
+    For complex operations, a struct might be clearer than many variadic parameters.
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Option Pattern
+
+```go
+type ServerConfig struct {
+    host string
+    port int
+    timeout time.Duration
+}
+
+type Option func(*ServerConfig)
+
+func WithHost(host string) Option {
+    return func(c *ServerConfig) {
+        c.host = host
+    }
+}
+
+func WithPort(port int) Option {
+    return func(c *ServerConfig) {
+        c.port = port
+    }
+}
+
+func NewServer(opts ...Option) *ServerConfig {
+    config := &ServerConfig{
+        host: "localhost",
+        port: 8080,
+        timeout: 30 * time.Second,
+    }
+    
+    for _, opt := range opts {
+        opt(config)
+    }
+    
+    return config
+}
+
+// Usage
+server := NewServer(
+    WithHost("0.0.0.0"),
+    WithPort(3000),
+)
+```
+
+## Performance Considerations
+
+1. **Allocation**: Passing individual arguments creates a new slice, which involves memory allocation.
+
+2. **Slice Expansion**: Using `...` with an existing slice is more efficient when working with large datasets.
+
+3. **Nil Checks**: Variadic parameters with zero arguments result in a nil slice, which is safe to range over but requires checking before indexing.
+
+```go
+func safeAccess(nums ...int) {
+    // Safe: ranging over nil slice is allowed
+    for _, n := range nums {
+        fmt.Println(n)
+    }
+    
+    // Unsafe without check
+    if len(nums) > 0 {
+        first := nums[0] // Check length first
+    }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Closures" icon="lock" href="/functions/closures">
+    Learn how functions can capture and use variables from their surrounding scope
+  </Card>
+  
+  <Card title="Higher-Order Functions" icon="layer-group" href="/functions/higher-order">
+    Discover functions that accept or return other functions
+  </Card>
+</CardGroup>

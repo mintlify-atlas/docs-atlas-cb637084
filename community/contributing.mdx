@@ -1,0 +1,410 @@
+---
+title: "Contributing"
+description: "How to contribute to the Learn Go course materials"
+icon: "code-pull-request"
+---
+
+## Overview
+
+Learn Go is an open-source educational project that welcomes contributions from the community. Whether you're fixing typos, adding examples, or translating content, your contributions help thousands of developers learn Go.
+
+<Note>
+The Learn Go repository is licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+</Note>
+
+## Repository Information
+
+<CardGroup cols={2}>
+  <Card title="Source Repository" icon="github" href="https://github.com/inancgumus/learngo">
+    Main course materials and examples
+  </Card>
+  
+  <Card title="Author" icon="user" href="https://twitter.com/inancgumus">
+    @inancgumus on Twitter
+  </Card>
+  
+  <Card title="Blog" icon="book-open" href="https://blog.learngoprogramming.com">
+    In-depth Go articles and tutorials
+  </Card>
+  
+  <Card title="YouTube" icon="video" href="https://www.youtube.com/channel/UCYxepZhtnFIVRh8t5H_QAdg">
+    Video tutorials and explanations
+  </Card>
+</CardGroup>
+
+## Ways to Contribute
+
+### 1. Report Issues
+
+Found a bug, typo, or unclear explanation?
+
+<Steps>
+  <Step title="Check existing issues">
+    Search the [GitHub issues](https://github.com/inancgumus/learngo/issues) to see if it's already reported.
+  </Step>
+  
+  <Step title="Create a new issue">
+    If not found, create a new issue with:
+    - Clear title
+    - Location (file path and line number)
+    - Description of the problem
+    - Screenshots if applicable
+  </Step>
+  
+  <Step title="Be specific">
+    Include which section/exercise you're referring to and what you expected vs. what you found.
+  </Step>
+</Steps>
+
+### 2. Fix Bugs or Typos
+
+Small fixes are always welcome!
+
+```bash Quick Fix Workflow
+# Fork and clone the repository
+git clone https://github.com/YOUR_USERNAME/learngo.git
+cd learngo
+
+# Create a branch
+git checkout -b fix/typo-in-variables-section
+
+# Make your changes
+# Edit the relevant file
+
+# Commit with a clear message
+git add .
+git commit -m "Fix typo in 06-variables/README.md"
+
+# Push and create a pull request
+git push origin fix/typo-in-variables-section
+```
+
+<Tip>
+For typos or small fixes, you can even use GitHub's web editor to make changes directly in your browser.
+</Tip>
+
+### 3. Add Examples
+
+Have a great example that illustrates a concept?
+
+**What makes a good example:**
+- Clear and concise
+- Demonstrates one concept well
+- Includes comments explaining the code
+- Follows Go conventions and style
+- Works without external dependencies (when possible)
+
+**Example structure:**
+
+```go
+// Copyright © 2018 Inanc Gumus
+// Learn Go Programming Course
+// License: https://creativecommons.org/licenses/by-nc-sa/4.0/
+//
+// For more tutorials  : https://learngoprogramming.com
+// In-person training  : https://www.linkedin.com/in/inancgumus/
+// Follow me on twitter: https://twitter.com/inancgumus
+
+package main
+
+import "fmt"
+
+func main() {
+    // Clear example demonstrating the concept
+    message := "Hello, Go!"
+    fmt.Println(message)
+}
+```
+
+### 4. Improve Documentation
+
+Help make explanations clearer:
+
+- Add clarifying comments to complex examples
+- Create README files for sections that lack them
+- Improve existing documentation
+- Add diagrams or illustrations (where appropriate)
+
+### 5. Translate Content
+
+The course is being translated into multiple languages!
+
+**Currently supported:**
+- English (complete)
+- Spanish (work in progress)
+- Chinese (work in progress)
+
+<Steps>
+  <Step title="Check translation folder">
+    Look in `translation/[language]` to see what's already done.
+  </Step>
+  
+  <Step title="Follow the structure">
+    Keep the same directory structure as the English version.
+  </Step>
+  
+  <Step title="Translate accurately">
+    Maintain technical accuracy while making it natural in the target language.
+  </Step>
+  
+  <Step title="Test code examples">
+    Ensure all code examples work correctly.
+  </Step>
+</Steps>
+
+<Warning>
+Don't use automated translation tools alone. The translations should be reviewed by a native speaker with Go knowledge.
+</Warning>
+
+### 6. Add Exercises
+
+Create new exercises to help learners practice:
+
+**Exercise guidelines:**
+- Should reinforce concepts from the section
+- Include both the problem and solution
+- Provide hints when appropriate
+- Clearly state the learning objective
+
+**Structure:**
+
+```
+exercises/
+├── 01-your-exercise/
+│   ├── main.go          # Starting template
+│   ├── README.md        # Problem description
+│   └── solution/
+│       └── main.go      # Working solution
+```
+
+## Pull Request Process
+
+<Steps>
+  <Step title="Fork the repository">
+    Create your own fork on GitHub.
+  </Step>
+  
+  <Step title="Create a feature branch">
+    ```bash
+    git checkout -b feature/add-concurrency-examples
+    ```
+  </Step>
+  
+  <Step title="Make your changes">
+    Follow the coding style and structure of existing materials.
+  </Step>
+  
+  <Step title="Test your changes">
+    Ensure all code compiles and runs correctly:
+    ```bash
+    go run main.go
+    go test ./...
+    ```
+  </Step>
+  
+  <Step title="Commit with clear messages">
+    ```bash
+    git add .
+    git commit -m "Add examples for buffered channels"
+    ```
+  </Step>
+  
+  <Step title="Push to your fork">
+    ```bash
+    git push origin feature/add-concurrency-examples
+    ```
+  </Step>
+  
+  <Step title="Create a pull request">
+    Go to GitHub and create a PR with:
+    - Clear title
+    - Description of changes
+    - Why the change is needed
+    - Screenshots if applicable
+  </Step>
+</Steps>
+
+## Coding Standards
+
+### Go Code Style
+
+Follow standard Go conventions:
+
+```bash
+# Format your code
+go fmt ./...
+
+# Check for common issues
+go vet ./...
+
+# Run tests
+go test ./...
+```
+
+### File Headers
+
+Include the standard header in all Go files:
+
+```go
+// Copyright © 2018 Inanc Gumus
+// Learn Go Programming Course
+// License: https://creativecommons.org/licenses/by-nc-sa/4.0/
+//
+// For more tutorials  : https://learngoprogramming.com
+// In-person training  : https://www.linkedin.com/in/inancgumus/
+// Follow me on twitter: https://twitter.com/inancgumus
+```
+
+### Comments
+
+- Use clear, concise comments
+- Explain the "why" not just the "what"
+- For examples, comments should aid learning
+
+### Directory Structure
+
+Follow the existing structure:
+
+```
+XX-topic-name/
+├── 01-concept/
+│   └── main.go
+├── 02-another-concept/
+│   └── main.go
+├── exercises/
+│   └── README.md
+└── questions/
+    └── README.md
+```
+
+## What Not to Contribute
+
+<Warning>
+Please avoid the following:
+</Warning>
+
+- **Major restructuring** without discussion - Open an issue first
+- **External dependencies** unless absolutely necessary
+- **Overly complex examples** - Keep it simple for learners
+- **Duplicate content** - Check if it already exists
+- **AI-generated translations** - Translations need human review
+- **Promotional content** - Keep it educational
+
+## Review Process
+
+1. **Automated checks**: Your PR will run automated tests
+2. **Code review**: Maintainers will review your changes
+3. **Feedback**: You may be asked to make adjustments
+4. **Merge**: Once approved, your PR will be merged
+
+<Info>
+Be patient! Maintainers are volunteers and may take time to review. Feel free to politely ping if there's no response after a week.
+</Info>
+
+## Community Guidelines
+
+### Be Respectful
+
+- Welcome newcomers
+- Be patient with questions
+- Provide constructive feedback
+- Assume good intentions
+
+### Be Helpful
+
+- Answer questions when you can
+- Share your knowledge
+- Point people to relevant resources
+- Celebrate others' progress
+
+### Be Professional
+
+- Keep discussions technical and educational
+- Avoid off-topic conversations
+- Respect the code of conduct
+- Give credit where due
+
+## Recognition
+
+Contributors are valued members of the community!
+
+- Your contributions help thousands of learners
+- You'll be listed in the repository's contributors
+- You'll gain experience with open source
+- You'll deepen your own Go knowledge
+
+<Tip>
+Teaching others is one of the best ways to learn. Contributing to Learn Go helps both you and the community!
+</Tip>
+
+## Getting Help
+
+Need help with your contribution?
+
+<CardGroup cols={2}>
+  <Card title="GitHub Issues" icon="github">
+    Ask questions about contributing in the issues
+  </Card>
+  
+  <Card title="Twitter" icon="twitter" href="https://twitter.com/inancgumus">
+    Reach out to @inancgumus
+  </Card>
+  
+  <Card title="Course Community" icon="users">
+    Connect with other learners and contributors
+  </Card>
+  
+  <Card title="FAQ" href="/community/faq" icon="question">
+    Check frequently asked questions
+  </Card>
+</CardGroup>
+
+## First-Time Contributors
+
+New to open source? Perfect!
+
+<Steps>
+  <Step title="Start small">
+    Fix a typo or improve documentation first.
+  </Step>
+  
+  <Step title="Read the code">
+    Browse existing examples to understand the style.
+  </Step>
+  
+  <Step title="Ask questions">
+    Don't hesitate to ask for help or clarification.
+  </Step>
+  
+  <Step title="Be patient">
+    Your first PR might need several iterations. That's normal!
+  </Step>
+</Steps>
+
+## Thank You!
+
+Every contribution, no matter how small, makes a difference. Thank you for helping make Go more accessible to learners worldwide!
+
+<Info>
+Remember: The best way to learn is by doing. Contributing to this repository is both learning and giving back to the community.
+</Info>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="FAQ" href="/community/faq" icon="question">
+    Frequently asked questions
+  </Card>
+  
+  <Card title="Best Practices" href="/reference/best-practices" icon="star">
+    Learn Go best practices
+  </Card>
+  
+  <Card title="Troubleshooting" href="/reference/troubleshooting" icon="wrench">
+    Common issues and solutions
+  </Card>
+  
+  <Card title="GitHub Repo" icon="github" href="https://github.com/inancgumus/learngo">
+    Visit the repository
+  </Card>
+</CardGroup>

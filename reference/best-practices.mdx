@@ -1,0 +1,365 @@
+---
+title: "Go Best Practices"
+description: "Essential Go best practices derived from real-world examples in the Learn Go course"
+icon: "star"
+---
+
+## Overview
+
+This guide covers Go best practices demonstrated throughout the Learn Go course materials. These patterns are extracted from thousands of examples and represent idiomatic Go code.
+
+## Code Organization
+
+### Package Structure
+
+**Use meaningful package names**
+
+<CodeGroup>
+```go Good Example
+package logparser
+
+func Parse(line string) (*Entry, error) {
+    // ...
+}
+```
+
+```go Avoid
+package utils // Too generic
+
+func ParseLog(line string) (*Entry, error) {
+    // ...
+}
+```
+</CodeGroup>
+
+<Tip>
+Package names should be short, concise, and descriptive. The package name becomes part of the API (e.g., `logparser.Parse` is clearer than `utils.ParseLog`).
+</Tip>
+
+### File Naming
+
+Follow Go conventions for file naming:
+- Use lowercase
+- Use underscores for separation: `log_parser.go`
+- Test files: `log_parser_test.go`
+- Example files organized by topic: `01-basics`, `02-advanced`
+
+## Variable Declaration
+
+### Choose the Right Declaration Style
+
+<CodeGroup>
+```go Short Declaration
+// Use for local variables with initialization
+name := "Pablo"
+age := 95
+```
+
+```go Var Declaration
+// Use when you need zero values or explicit types
+var counter int
+var name string
+```
+
+```go Grouped Declaration
+// Use for related variables
+var (
+    name, lastname string
+    age            int
+)
+```
+</CodeGroup>
+
+### Avoid Unused Variables
+
+<Warning>
+Go will not compile if you have unused variables. This is by design to keep code clean.
+</Warning>
+
+```go
+func main() {
+    name := "Pablo"  // Error: name declared but not used
+}
+```
+
+## Error Handling
+
+### Check Errors Immediately
+
+<CodeGroup>
+```go Correct Pattern (Source: 11-if/questions/4-error-handling.md)
+d, err := time.ParseDuration("1h10s")
+if err != nil {
+    fmt.Println("Parsing error:", err)
+    return
+}
+fmt.Println(d)
+```
+
+```go Incorrect Pattern
+d, err := time.ParseDuration("1h10s")
+if err != nil {
+    fmt.Println(d) // Don't use d when there's an error!
+}
+```
+</CodeGroup>
+
+<Note>
+**Key Principle**: Handle errors immediately after the function call. Don't use returned values when an error is present.
+</Note>
+
+### Error Handling Rules
+
+1. **Check for nil**: `if err != nil` indicates a failure
+2. **Handle early**: Don't defer error handling
+3. **Don't ignore**: Always check returned error values
+4. **Be explicit**: Go doesn't use try/catch; use simple if statements
+
+## Loop Patterns
+
+### Use the Right Loop Form
+
+<CodeGroup>
+```go Standard For Loop
+for i := 0; i < 10; i++ {
+    fmt.Println(i)
+}
+```
+
+```go While-style Loop
+for i > 0 {
+    i--
+    fmt.Println(i)
+}
+```
+
+```go Infinite Loop
+for {
+    // Use break to exit
+}
+```
+
+```go Range Loop (Source: 13-loops/questions/01-loops.md)
+for i, v := range os.Args[1:] {
+    fmt.Println(i+1, v)
+}
+```
+</CodeGroup>
+
+### Range Loop Best Practices
+
+```go
+// Ignore index with _
+for _, value := range slice {
+    fmt.Println(value)
+}
+
+// Index only
+for i := range slice {
+    fmt.Println(i)
+}
+
+// Count items
+var count int
+for range slice {
+    count++
+}
+```
+
+## Slices and Arrays
+
+### Understanding Slice Capacity
+
+<Info>
+Slices are backed by arrays. Understanding capacity and growth is crucial for performance.
+</Info>
+
+```go Example from 16-slices
+// Append grows capacity intelligently
+words := []string{1022: ""}
+words = append(words, "boom!")
+// Length: 1024, Capacity: 2048 (doubled)
+
+words := []string{1023: ""}
+words = append(words, "boom!")
+// Length: 1025, Capacity: 1280 (25% growth after 1024)
+```
+
+### Avoid Memory Leaks
+
+<Warning>
+When slicing, remember that the backing array is still referenced. This can cause memory leaks.
+</Warning>
+
+```go
+// From 16-slices/exercises/24-fix-the-memory-leak
+// If you only need a small portion, copy it
+small := make([]byte, 10)
+copy(small, large[:10])
+// Now large can be garbage collected
+```
+
+## Structs
+
+### Use Struct Literals
+
+<CodeGroup>
+```go Keyed Fields (Recommended)
+picasso := person{
+    name:     "Pablo",
+    lastname: "Picasso",
+    age:      91,
+}
+```
+
+```go Field Access
+var freud person
+freud.name = "Sigmund"
+freud.lastname = "Freud"
+freud.age = 83
+```
+</CodeGroup>
+
+<Tip>
+Use keyed fields in struct literals. This makes code more maintainable when struct fields change.
+</Tip>
+
+## Pointers
+
+### When to Use Pointers
+
+```go From 26-pointers/01-pointers
+// Use pointers to modify values
+var counter byte = 100
+P := &counter
+*P = 25  // counter is now 25
+
+// Use values for copies
+V := *P
+V = 200  // counter unchanged
+```
+
+**Use pointers when:**
+- You need to modify the value
+- The struct is large (avoid copying)
+- You need to share state
+
+**Use values when:**
+- The data is small
+- You want independence/immutability
+- Concurrent safety matters
+
+## Interfaces
+
+### Accept Interfaces, Return Structs
+
+```go From interfaces/04-interfaces
+// Define minimal interfaces
+type printer interface {
+    print()
+}
+
+// Accept interfaces in functions
+func displayAll(items []printer) {
+    for _, item := range items {
+        item.print()
+    }
+}
+
+// Return concrete types
+func NewBook(title string, price float64) book {
+    return book{title: title, price: price}
+}
+```
+
+<Note>
+This pattern provides flexibility for callers while maintaining concrete return types for clarity.
+</Note>
+
+## Testing
+
+### Name Test Files Correctly
+
+```go
+// Source file
+board.go
+
+// Test file
+board_test.go
+```
+
+### Write Table-Driven Tests
+
+```go From x-tba/tictactoe examples
+func TestBoard(t *testing.T) {
+    tests := []struct {
+        name string
+        want bool
+    }{
+        {"test case 1", true},
+        {"test case 2", false},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // Test logic
+        })
+    }
+}
+```
+
+## Constants
+
+### Use Typed Constants
+
+```go From 10-constants
+const (
+    Sunday    = 0
+    Monday    = 1
+    Tuesday   = 2
+    // ...
+)
+
+// Better with iota
+const (
+    Sunday = iota
+    Monday
+    Tuesday
+)
+```
+
+## Code Comments
+
+### Document Exported Identifiers
+
+```go
+// Parse extracts structured data from a log line.
+// It returns an error if the line format is invalid.
+func Parse(line string) (*Entry, error) {
+    // ...
+}
+```
+
+<Tip>
+Package-level comments should start with "Package packagename" and explain the package's purpose.
+</Tip>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Go Idioms" href="/reference/idioms" icon="code">
+    Common Go idioms and patterns
+  </Card>
+  
+  <Card title="Design Patterns" href="/reference/design-patterns" icon="diagram-project">
+    Design patterns in Go
+  </Card>
+  
+  <Card title="Troubleshooting" href="/reference/troubleshooting" icon="wrench">
+    Common issues and solutions
+  </Card>
+  
+  <Card title="FAQ" href="/community/faq" icon="question">
+    Frequently asked questions
+  </Card>
+</CardGroup>

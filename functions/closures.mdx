@@ -1,0 +1,450 @@
+---
+title: 'Closures'
+description: 'Master closures in Go - anonymous functions that can capture and remember variables from their surrounding scope'
+---
+
+## Introduction
+
+A **closure** is a function that references variables from outside its own body. The function can access and modify these variables even after the outer function has returned. Closures are powerful tools for creating stateful functions, callbacks, and elegant APIs.
+
+## What is a Closure?
+
+A closure is an anonymous function that "closes over" variables from its surrounding scope:
+
+```go
+func main() {
+    min := 3
+    
+    // This is a closure - it references 'min' from the outer scope
+    greaterThan := func(n int) bool {
+        return n > min
+    }
+    
+    result := greaterThan(5) // true
+    result = greaterThan(2)  // false
+}
+```
+
+The `greaterThan` function "remembers" the `min` variable and can access it every time it's called.
+
+## Anonymous Functions vs Closures
+
+### Anonymous Functions
+
+Anonymous functions are function literals without a name:
+
+```go
+// Anonymous function assigned to a variable
+square := func(x int) int {
+    return x * x
+}
+
+result := square(5) // 25
+```
+
+### Closures (Anonymous Functions with Captured Variables)
+
+Closures are anonymous functions that capture variables from their environment:
+
+```go
+multiplier := 10
+
+// Closure that captures 'multiplier'
+multiply := func(x int) int {
+    return x * multiplier
+}
+
+result := multiply(5) // 50
+```
+
+<Note>
+All closures are anonymous functions, but not all anonymous functions are closures. A function only becomes a closure when it references variables from outside its body.
+</Note>
+
+## Practical Example: Dynamic Filtering
+
+Here's a real-world example showing the power of closures:
+
+```go
+type filterFunc func(int) bool
+
+func main() {
+    nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    
+    // Using regular functions
+    fmt.Println("••• FUNC VALUES •••")
+    fmt.Printf("evens      : %d\n", filter(isEven, nums...))
+    fmt.Printf("odds       : %d\n", filter(isOdd, nums...))
+    
+    // Using closures for dynamic behavior
+    fmt.Println("\n••• CLOSURES •••")
+    
+    var min int
+    greaterThan := func(n int) bool {
+        return n > min
+    }
+    
+    min = 3
+    fmt.Printf("> 3        : %d\n", filter(greaterThan, nums...))
+    // Output: [4 5 6 7 8 9 10]
+    
+    min = 6
+    fmt.Printf("> 6        : %d\n", filter(greaterThan, nums...))
+    // Output: [7 8 9 10]
+}
+
+func filter(f filterFunc, nums ...int) (filtered []int) {
+    for _, n := range nums {
+        if f(n) {
+            filtered = append(filtered, n)
+        }
+    }
+    return
+}
+
+func isEven(n int) bool { return n%2 == 0 }
+func isOdd(m int) bool  { return m%2 == 1 }
+```
+
+<Tip>
+Closures allow you to create reusable functions with dynamic behavior. Instead of writing `greaterThan3` and `greaterThan6` as separate functions, you can use one closure with a variable threshold.
+</Tip>
+
+## Variable Capture and Scope
+
+### Capturing Variables
+
+Closures capture variables by reference, not by value:
+
+```go
+count := 0
+
+increment := func() int {
+    count++
+    return count
+}
+
+fmt.Println(increment()) // 1
+fmt.Println(increment()) // 2
+fmt.Println(increment()) // 3
+fmt.Println(count)       // 3
+```
+
+The closure modifies the original `count` variable, not a copy.
+
+### The Loop Variable Problem
+
+A common pitfall when creating closures in loops:
+
+```go
+// WRONG: All closures reference the same variable
+var functions []func() int
+for i := 0; i < 3; i++ {
+    functions = append(functions, func() int {
+        return i  // Captures the loop variable
+    })
+}
+
+for _, f := range functions {
+    fmt.Println(f()) // Output: 3, 3, 3 (not 0, 1, 2!)
+}
+```
+
+### The Solution: Create a New Variable
+
+```go
+// CORRECT: Each closure captures its own variable
+var functions []func() int
+for i := 0; i < 3; i++ {
+    current := i  // Create a new variable for each iteration
+    functions = append(functions, func() int {
+        return current
+    })
+}
+
+for _, f := range functions {
+    fmt.Println(f()) // Output: 0, 1, 2
+}
+```
+
+<Warning>
+Always create a new variable inside the loop when capturing loop variables in closures. Otherwise, all closures will share the same variable and produce unexpected results.
+</Warning>
+
+## Advanced Example: Multiple Closures
+
+You can create multiple closures that share state:
+
+```go
+var filterers []filterFunc
+
+for i := 1; i <= 3; i++ {
+    current := i  // Important: create new variable
+    
+    filterers = append(filterers, func(n int) bool {
+        return n > current
+    })
+}
+
+nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+for i, filterer := range filterers {
+    result := filter(filterer, nums...)
+    fmt.Printf("> %d        : %d\n", i+1, result)
+}
+// Output:
+// > 1        : [2 3 4 5 6 7 8 9 10]
+// > 2        : [3 4 5 6 7 8 9 10]
+// > 3        : [4 5 6 7 8 9 10]
+```
+
+## Practical Use Cases
+
+### 1. Configuration and Options
+
+```go
+type Server struct {
+    host    string
+    port    int
+    timeout time.Duration
+}
+
+type Option func(*Server)
+
+func WithHost(host string) Option {
+    return func(s *Server) {
+        s.host = host
+    }
+}
+
+func WithPort(port int) Option {
+    return func(s *Server) {
+        s.port = port
+    }
+}
+
+func NewServer(opts ...Option) *Server {
+    s := &Server{
+        host:    "localhost",
+        port:    8080,
+        timeout: 30 * time.Second,
+    }
+    
+    for _, opt := range opts {
+        opt(s)
+    }
+    
+    return s
+}
+
+// Usage
+server := NewServer(
+    WithHost("0.0.0.0"),
+    WithPort(3000),
+)
+```
+
+### 2. Event Handlers
+
+```go
+func createClickHandler(buttonID string) func() {
+    clickCount := 0
+    
+    return func() {
+        clickCount++
+        fmt.Printf("Button %s clicked %d times\n", buttonID, clickCount)
+    }
+}
+
+// Each handler maintains its own state
+handler1 := createClickHandler("submit")
+handler2 := createClickHandler("cancel")
+
+handler1() // Button submit clicked 1 times
+handler1() // Button submit clicked 2 times
+handler2() // Button cancel clicked 1 times
+```
+
+### 3. Memoization
+
+```go
+func fibonacci() func() int {
+    a, b := 0, 1
+    
+    return func() int {
+        result := a
+        a, b = b, a+b
+        return result
+    }
+}
+
+// Usage
+fib := fibonacci()
+for i := 0; i < 10; i++ {
+    fmt.Print(fib(), " ")
+}
+// Output: 0 1 1 2 3 5 8 13 21 34
+```
+
+### 4. Middleware Pattern
+
+```go
+type HandlerFunc func(string) string
+
+func loggingMiddleware(name string) func(HandlerFunc) HandlerFunc {
+    return func(next HandlerFunc) HandlerFunc {
+        return func(input string) string {
+            fmt.Printf("[%s] Before: %s\n", name, input)
+            result := next(input)
+            fmt.Printf("[%s] After: %s\n", name, result)
+            return result
+        }
+    }
+}
+
+// Usage
+handler := func(s string) string {
+    return strings.ToUpper(s)
+}
+
+wrappedHandler := loggingMiddleware("UpperCase")(handler)
+result := wrappedHandler("hello")
+// Output:
+// [UpperCase] Before: hello
+// [UpperCase] After: HELLO
+```
+
+## Closures vs Function Pointers
+
+### Regular Function
+
+```go
+func greaterThan3(n int) bool {
+    return n > 3
+}
+
+func greaterThan6(n int) bool {
+    return n > 6
+}
+
+// Need separate functions for each threshold
+```
+
+### Closure
+
+```go
+var min int
+greaterThan := func(n int) bool {
+    return n > min
+}
+
+// One function, dynamic behavior
+min = 3
+filter(greaterThan, nums...)
+
+min = 6
+filter(greaterThan, nums...)
+```
+
+<CardGroup cols={2}>
+  <Card title="Regular Functions" icon="function">
+    Static behavior, defined at compile time, no captured state
+  </Card>
+  
+  <Card title="Closures" icon="lock">
+    Dynamic behavior, can capture and modify external state
+  </Card>
+</CardGroup>
+
+## Memory Considerations
+
+Closures keep references to captured variables, which prevents them from being garbage collected:
+
+```go
+func createClosure() func() int {
+    // This large slice will stay in memory as long as
+    // the returned closure exists
+    largeData := make([]int, 1000000)
+    counter := 0
+    
+    return func() int {
+        // Closure keeps largeData alive
+        counter++
+        return len(largeData) + counter
+    }
+}
+
+closure := createClosure() // largeData stays in memory
+```
+
+<Warning>
+Be mindful of what variables your closures capture. Capturing large data structures can lead to unexpected memory usage.
+</Warning>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Create New Variables in Loops" icon="rotate">
+    Always create a new variable when capturing loop variables to avoid sharing state.
+  </Card>
+  
+  <Card title="Be Explicit About Captures" icon="eye">
+    Make it clear which variables are being captured by keeping closures close to where they're defined.
+  </Card>
+  
+  <Card title="Watch Memory Usage" icon="gauge-high">
+    Be aware that closures keep captured variables alive, preventing garbage collection.
+  </Card>
+  
+  <Card title="Use for Encapsulation" icon="shield">
+    Closures are excellent for hiding implementation details and creating private state.
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Factory Pattern
+
+```go
+func makeAdder(x int) func(int) int {
+    return func(y int) int {
+        return x + y
+    }
+}
+
+add5 := makeAdder(5)
+add10 := makeAdder(10)
+
+fmt.Println(add5(3))  // 8
+fmt.Println(add10(3)) // 13
+```
+
+### Iterator Pattern
+
+```go
+func counter(start int) func() int {
+    count := start
+    return func() int {
+        result := count
+        count++
+        return result
+    }
+}
+
+next := counter(1)
+fmt.Println(next()) // 1
+fmt.Println(next()) // 2
+fmt.Println(next()) // 3
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Higher-Order Functions" icon="layer-group" href="/functions/higher-order">
+    Learn how to write functions that take or return other functions
+  </Card>
+  
+  <Card title="Deferred Functions" icon="clock" href="/functions/deferred">
+    Discover how to schedule function calls for later execution
+  </Card>
+</CardGroup>

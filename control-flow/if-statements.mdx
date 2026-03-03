@@ -1,0 +1,305 @@
+---
+title: "If Statements"
+description: "Master conditional logic in Go with if statements, boolean operators, error handling, and short if syntax"
+---
+
+If statements are fundamental control flow structures that allow you to execute code conditionally based on boolean expressions. Go's if statements are straightforward and powerful, with some unique features like short if declarations.
+
+## Boolean Operators
+
+Before using if statements, you need to understand boolean operators that create conditions.
+
+### Comparison Operators
+
+Comparison operators evaluate to boolean values (`true` or `false`):
+
+```go
+speed := 100
+
+fast := speed >= 80  // true
+slow := speed < 20   // false
+
+fmt.Printf("going fast? %t\n", fast)  // true
+fmt.Printf("going slow? %t\n", slow)  // false
+
+fmt.Printf("is it 100 mph? %t\n", speed == 100)    // true
+fmt.Printf("is it not 100 mph? %t\n", speed != 100) // false
+```
+
+Available comparison operators:
+- `==` - equal to
+- `!=` - not equal to
+- `<` - less than
+- `<=` - less than or equal to
+- `>` - greater than
+- `>=` - greater than or equal to
+
+### Logical Operators
+
+Logical operators combine boolean expressions:
+
+#### AND Operator (`&&`)
+
+Both conditions must be true:
+
+```go
+fmt.Println("true  && false =", true && false)  // false
+fmt.Println("false && true  =", false && true)  // false
+```
+
+#### OR Operator (`||`)
+
+At least one condition must be true:
+
+```go
+fmt.Println("true  || false =", true || false)  // true
+fmt.Println("false || true  =", false || true)  // true
+```
+
+#### NOT Operator (`!`)
+
+Negates a boolean value:
+
+```go
+fmt.Println(
+    "hi" == "hi" && 3 > 2,    //   true  && true  => true
+    "hi" != "hi" || 3 > 2,    //   false || true  => true
+    !("hi" != "hi" || 3 > 2), // !(false || true) => false
+)
+```
+
+## Basic If Statement
+
+The simplest form of an if statement executes code when a condition is true:
+
+```go
+score, valid := 5, true
+
+if score > 3 && valid {
+    fmt.Println("good")
+}
+```
+
+<Note>
+Go doesn't require parentheses around conditions, but braces `{}` are always required.
+</Note>
+
+## Else Branch
+
+Use `else` to execute code when the condition is false:
+
+```go
+score, valid := 3, true
+
+if score > 3 && valid {
+    fmt.Println("good")
+} else {
+    fmt.Println("low")
+}
+```
+
+## Else If Branch
+
+Chain multiple conditions using `else if`:
+
+```go
+score := 3
+
+if score > 3 {
+    fmt.Println("good")
+} else if score == 3 {
+    fmt.Println("on the edge")
+} else {
+    fmt.Println("low")
+}
+```
+
+## Error Handling Pattern
+
+Go uses if statements extensively for error handling. The idiomatic pattern is to handle errors immediately and return early:
+
+```go
+age := os.Args[1]
+
+// Atoi returns an int and an error value
+n, err := strconv.Atoi(age)
+
+// Handle the error immediately and quit
+if err != nil {
+    fmt.Println("ERROR:", err)
+    return  // Quit early
+}
+
+// Happy path continues here (err is nil)
+fmt.Printf("SUCCESS: Converted %q to %d.\n", age, n)
+```
+
+<Warning>
+**Don't do this:**
+```go
+if err != nil {
+    // handle error
+} else {
+    // happy path
+}
+```
+
+**Do this instead:**
+```go
+if err != nil {
+    // handle error
+    return
+}
+// happy path
+```
+</Warning>
+
+This pattern keeps your code flat and readable by avoiding unnecessary nesting.
+
+## Short If Statement
+
+Go allows you to declare variables within the if statement itself. These variables are scoped to the if block:
+
+```go
+if n, err := strconv.Atoi("42"); err == nil {
+    // n and err are available here
+    fmt.Println("There was no error, n is", n)
+}
+
+// n and err are NOT available here
+```
+
+This is particularly useful for error handling when you only need the variables within the if block:
+
+```go
+if n, err := strconv.Atoi(input); err != nil {
+    fmt.Println("ERROR:", err)
+    return
+}
+// n is not available here
+```
+
+### Variable Scope
+
+Variables declared in a short if statement are only accessible within that if block and its else branches:
+
+```go
+if n, err := strconv.Atoi("42"); err == nil {
+    fmt.Println("Success:", n)  // n is available
+} else {
+    fmt.Println("Error:", err)  // n and err are available
+}
+// n and err are NOT available here
+```
+
+<Warning>
+**Be careful with shadowing:**
+
+```go
+n := 10  // Outer scope
+
+if n, err := strconv.Atoi("42"); err == nil {
+    fmt.Println(n)  // This is the inner n (42), not the outer n (10)
+}
+
+fmt.Println(n)  // This is the outer n (10)
+```
+</Warning>
+
+## Practical Examples
+
+### Leap Year Checker
+
+```go
+year, err := strconv.Atoi(os.Args[1])
+if err != nil {
+    fmt.Printf("%q is not a valid year.\n", os.Args[1])
+    return
+}
+
+var leap bool
+if year%400 == 0 {
+    leap = true
+} else if year%100 == 0 {
+    leap = false
+} else if year%4 == 0 {
+    leap = true
+}
+
+if leap {
+    fmt.Printf("%d is a leap year.\n", year)
+} else {
+    fmt.Printf("%d is not a leap year.\n", year)
+}
+```
+
+### Input Validation
+
+```go
+if len(os.Args) != 2 {
+    fmt.Println("Give me a year number")
+    return
+}
+
+year, err := strconv.Atoi(os.Args[1])
+if err != nil {
+    fmt.Printf("%q is not a valid year.\n", os.Args[1])
+    return
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Handle Errors Early" icon="circle-exclamation">
+    Return immediately after handling errors instead of nesting the happy path in an else block
+  </Card>
+  
+  <Card title="Use Short If" icon="code">
+    Declare variables in the if statement when they're only needed in that scope
+  </Card>
+  
+  <Card title="Avoid Deep Nesting" icon="layer-group">
+    Keep your code flat by returning early from error conditions
+  </Card>
+  
+  <Card title="No Parentheses Needed" icon="brackets-curly">
+    Go doesn't require parentheses around conditions, making code cleaner
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Multiple Conditions
+
+```go
+if score > 3 && valid && !expired {
+    fmt.Println("valid score")
+}
+```
+
+### Complex Boolean Logic
+
+```go
+if (age >= 18 && citizen) || hasPermit {
+    fmt.Println("Can vote")
+}
+```
+
+### Checking for Zero Values
+
+```go
+if name == "" {
+    fmt.Println("Name cannot be empty")
+    return
+}
+```
+
+## Key Takeaways
+
+- If statements control program flow based on boolean conditions
+- Go requires braces but no parentheses around conditions
+- Error handling in Go uses if statements with early returns
+- Short if statements allow variable declarations scoped to the if block
+- Avoid deep nesting by handling errors early and returning
+- Logical operators (`&&`, `||`, `!`) combine conditions

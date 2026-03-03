@@ -1,0 +1,368 @@
+---
+title: Text Wrapper
+description: Wrap long text to fit within a specified width using Unicode and formatting
+icon: text-width
+---
+
+Create a text wrapper that intelligently breaks long text into lines of a maximum width, respecting word boundaries.
+
+## What You'll Build
+
+A text formatting program that:
+- Accepts long text and wraps it to a maximum width
+- Breaks lines at word boundaries (spaces)
+- Handles newlines in the original text
+- Works with Unicode characters (including Turkish)
+- Uses a fallthrough switch statement for control flow
+
+## What You'll Learn
+
+- Iterating over strings with `range` (runes, not bytes)
+- Working with Unicode characters
+- Using the `unicode` package for character classification
+- Switch statements with `fallthrough`
+- Tracking state across loop iterations
+- Text formatting and line width management
+
+## The Problem
+
+When you have long text, it might not fit well in a terminal or fixed-width display:
+
+```
+Galaksinin Batı Sarmal Kolu'nun bir ucunda, haritası bile çıkarılmamış ücra bir köşede, gözlerden uzak, küçük ve sarı bir güneş vardır. Bu güneşin yörüngesinde, kabaca yüz kırksekiz milyon kilometre uzağında, tamamıyla önemsiz ve mavi-yeşil renkli, küçük bir gezegen döner.
+```
+
+We want to wrap it to a specific width (e.g., 40 characters):
+
+```
+Galaksinin Batı Sarmal Kolu'nun bir
+ucunda, haritası bile çıkarılmamış
+ücra bir köşede, gözlerden uzak,
+küçük ve sarı bir güneş vardır.
+
+Bu güneşin yörüngesinde, kabaca yüz
+kırksekiz milyon kilometre uzağında,
+tamamıyla önemsiz ve mavi-yeşil
+renkli, küçük bir gezegen döner.
+```
+
+## Complete Solution
+
+```go
+package main
+
+import (
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	const text = `Galaksinin Batı Sarmal Kolu'nun bir ucunda, haritası bile çıkarılmamış ücra bir köşede, gözlerden uzak, küçük ve sarı bir güneş vardır.
+
+Bu güneşin yörüngesinde, kabaca yüz kırksekiz milyon kilometre uzağında, tamamıyla önemsiz ve mavi-yeşil renkli, küçük bir gezegen döner.
+
+Gezegenin maymun soyundan gelen canlıları öyle ilkeldir ki dijital kol saatinin hâlâ çok etkileyici bir buluş olduğunu düşünürler.`
+
+	const maxWidth = 40
+
+	var lw int // line width tracker
+
+	for _, r := range text {
+		fmt.Printf("%c", r)
+
+		// Increment line width, then check conditions
+		switch lw++; {
+		case lw > maxWidth && r != '\n' && unicode.IsSpace(r):
+			// Line too long and we're at a space (word boundary)
+			fmt.Println()  // Start new line
+			fallthrough    // Also reset line width
+		case r == '\n':
+			// Original text had a newline
+			lw = 0  // Reset line width counter
+		}
+	}
+	fmt.Println()
+}
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Initialize Variables">
+    ```go
+    const maxWidth = 40
+    var lw int  // line width counter
+    ```
+    
+    We track the current line width as we process characters.
+  </Step>
+  
+  <Step title="Iterate Over Runes">
+    ```go
+    for _, r := range text {
+        fmt.Printf("%c", r)
+        // ...
+    }
+    ```
+    
+    Using `range` on a string gives us runes (Unicode code points), not bytes.
+    This correctly handles multi-byte characters like Turkish "ı", "ş", etc.
+  </Step>
+  
+  <Step title="Track Line Width">
+    ```go
+    switch lw++; {
+    case /* conditions */:
+        // ...
+    }
+    ```
+    
+    The `lw++` in the switch statement increments the counter before evaluating cases.
+  </Step>
+  
+  <Step title="Break at Word Boundaries">
+    ```go
+    case lw > maxWidth && r != '\n' && unicode.IsSpace(r):
+        fmt.Println()  // Insert line break
+        fallthrough    // Continue to next case
+    case r == '\n':
+        lw = 0         // Reset counter
+    ```
+    
+    **Logic:**
+    1. If line is too long AND we're at a space (not newline)
+       - Print a newline
+       - Fall through to reset counter
+    2. If we encounter a newline (original or inserted)
+       - Reset the line width counter
+  </Step>
+</Steps>
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="Strings and Runes">
+    ```go
+    text := "Hello 世界"  // Mix of ASCII and Unicode
+    
+    // ❌ Iterating over bytes (wrong for Unicode)
+    for i := 0; i < len(text); i++ {
+        fmt.Printf("%c ", text[i])  // Breaks on 世界
+    }
+    
+    // ✅ Iterating over runes (correct)
+    for _, r := range text {
+        fmt.Printf("%c ", r)  // Works correctly
+    }
+    ```
+    
+    **Why?** Multi-byte characters like "世" use 3+ bytes. Iterating by byte breaks them.
+  </Accordion>
+  
+  <Accordion title="Switch with Fallthrough">
+    ```go
+    switch x := getValue(); {
+    case x > 10:
+        fmt.Println("Large")
+        fallthrough  // Continue to next case
+    case x > 5:
+        fmt.Println("Medium")
+    default:
+        fmt.Println("Small")
+    }
+    
+    // If x = 15:
+    // Prints "Large" then "Medium"
+    ```
+    
+    `fallthrough` forces execution of the next case, regardless of its condition.
+  </Accordion>
+  
+  <Accordion title="Unicode Package">
+    ```go
+    import "unicode"
+    
+    // Character classification
+    unicode.IsSpace(' ')   // true
+    unicode.IsSpace('\t')  // true
+    unicode.IsSpace('\n')  // true
+    unicode.IsSpace('a')   // false
+    
+    unicode.IsLetter('a')  // true
+    unicode.IsLetter('ş')  // true (Turkish)
+    unicode.IsLetter('世') // true (Chinese)
+    
+    unicode.IsDigit('5')   // true
+    unicode.IsDigit('a')   // false
+    ```
+  </Accordion>
+  
+  <Accordion title="Switch Statement Initialization">
+    ```go
+    // You can initialize variables in switch
+    switch lw++; {  // Increment lw, then evaluate cases
+    case lw > maxWidth:
+        // lw has already been incremented
+    }
+    
+    // Equivalent to:
+    lw++
+    switch {
+    case lw > maxWidth:
+        // ...
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Algorithm Walkthrough
+
+Let's trace through an example:
+
+```go
+text := "Hello world"
+maxWidth := 8
+lw := 0
+```
+
+| Character | lw (before) | lw (after) | Action |
+|-----------|-------------|------------|--------|
+| H | 0 | 1 | Print "H" |
+| e | 1 | 2 | Print "e" |
+| l | 2 | 3 | Print "l" |
+| l | 3 | 4 | Print "l" |
+| o | 4 | 5 | Print "o" |
+| (space) | 5 | 6 | Print " " |
+| w | 6 | 7 | Print "w" |
+| o | 7 | 8 | Print "o" |
+| r | 8 | 9 | lw > 8, next space → break line |
+| l | 9 | 1 | Print "l" (on new line) |
+| d | 1 | 2 | Print "d" |
+
+Output:
+```
+Hello wo
+rld
+```
+
+## Why This Approach?
+
+<Tip>
+**Advantages:**
+- Single pass through the text
+- No string building (efficient)
+- Handles Unicode correctly
+- Respects word boundaries
+- Preserves original newlines
+- Simple state management
+</Tip>
+
+**Alternative approaches:**
+- Split into words, then rebuild lines (less efficient)
+- Use regular expressions (overkill for this)
+- Buffer entire output (uses more memory)
+
+## Handling Edge Cases
+
+```go
+// Word longer than maxWidth
+"supercalifragilisticexpialidocious"  // Will exceed width
+
+// Multiple consecutive spaces
+"hello    world"  // Breaks at first space
+
+// Only whitespace
+"     "  // Each space might trigger a break
+
+// Empty string
+""  // Nothing to process
+```
+
+<Warning>
+This simple algorithm doesn't handle words longer than `maxWidth`. They will overflow the line.
+For a production wrapper, you'd need to handle this case (e.g., force-break long words).
+</Warning>
+
+## Enhancements to Try
+
+1. **Hyphenation** - Break long words with hyphens
+2. **Justification** - Add spacing to make lines equal width
+3. **Indentation** - Indent first line or all lines
+4. **Command-line args** - Accept width and text as arguments
+5. **Multiple paragraphs** - Preserve double newlines
+6. **Trim trailing spaces** - Remove spaces at line ends
+7. **Count lines** - Report how many lines were created
+8. **RTL support** - Handle right-to-left languages
+
+## Configurable Width
+
+Make the width configurable:
+
+```go
+import (
+    "fmt"
+    "os"
+    "strconv"
+)
+
+func main() {
+    if len(os.Args) < 2 {
+        fmt.Println("Usage: wrapper <width>")
+        return
+    }
+    
+    maxWidth, err := strconv.Atoi(os.Args[1])
+    if err != nil || maxWidth <= 0 {
+        fmt.Println("Invalid width")
+        return
+    }
+    
+    // Rest of the code...
+}
+```
+
+## Testing Examples
+
+```bash
+# Test with different widths
+go run main.go 20
+go run main.go 60
+go run main.go 80
+
+# Test with special characters
+go run main.go < turkish_text.txt
+go run main.go < emoji_text.txt
+```
+
+## Real-World Applications
+
+- **Email clients** - Wrapping plain text emails
+- **Terminal apps** - Formatting output for fixed-width displays
+- **Chat apps** - Wrapping long messages
+- **Log viewers** - Making logs more readable
+- **README generators** - Formatting documentation
+- **Subtitle tools** - Breaking subtitles into lines
+
+## Learning Resources
+
+<CardGroup cols={2}>
+  <Card title="Unicode in Go" icon="language" href="https://go.dev/blog/strings">
+    Official Go blog on strings, bytes, and runes
+  </Card>
+  
+  <Card title="Unicode Package Docs" icon="book" href="https://pkg.go.dev/unicode">
+    Full unicode package documentation
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spam Masker" icon="mask" href="/projects/spam-masker">
+    More text processing practice
+  </Card>
+  
+  <Card title="Strings Guide" icon="font" href="/data-structures/strings-runes-bytes">
+    Deep dive into Go strings
+  </Card>
+</CardGroup>

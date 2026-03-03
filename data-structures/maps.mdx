@@ -1,0 +1,509 @@
+---
+title: "Maps"
+description: "Learn about Go maps - efficient key-value data structures for fast lookups and flexible storage"
+---
+
+## What is a Map?
+
+A map is an unordered collection of **key-value pairs**. Maps provide fast lookups, additions, and deletions based on keys. They're similar to dictionaries in Python or objects in JavaScript.
+
+```go
+// Map from string keys to string values
+var dict map[string]string
+
+// Map from int keys to bool values
+var flags map[int]bool
+
+// Map from string keys to int values
+var scores map[string]int
+```
+
+## Declaring Maps
+
+### Nil Maps
+
+A declared but uninitialized map is `nil` and **read-only**:
+
+```go
+var dict map[string]string
+
+// Reading from a nil map returns the zero value
+value := dict["key"]
+fmt.Println(value)  // "" (empty string - zero value)
+
+// Length of nil map is 0
+fmt.Println(len(dict))  // 0
+
+// Checking if it's nil
+fmt.Println(dict == nil)  // true
+```
+
+<Warning>
+You **cannot** assign to a nil map - it will panic:
+```go
+var dict map[string]string
+dict["key"] = "value"  // Panic: assignment to entry in nil map
+```
+</Warning>
+
+### Map Literals
+
+Create maps with initial values:
+
+```go
+// Empty map (not nil, ready to use)
+dict := map[string]string{}
+
+// Map with initial values
+dict := map[string]string{
+    "good":    "iyi",
+    "great":   "harika",
+    "perfect": "mükemmel",
+}
+```
+
+### Using make()
+
+The `make()` function creates an empty map ready for use:
+
+```go
+// Create an empty map
+dict := make(map[string]string)
+
+// Optionally specify initial capacity (optimization)
+dict := make(map[string]string, 100)
+```
+
+<Note>
+Unlike slices, map capacity is just a hint for optimization. Maps grow automatically as needed.
+</Note>
+
+## Basic Operations
+
+### Adding and Updating
+
+```go
+dict := map[string]string{
+    "good": "kötü",
+}
+
+// Add a new key-value pair
+dict["up"] = "yukarı"
+dict["down"] = "aşağı"
+
+// Update an existing value
+dict["good"] = "iyi"  // Overwrites "kötü" with "iyi"
+
+fmt.Println(dict)
+// map[down:aşağı good:iyi up:yukarı]
+```
+
+### Retrieving Values
+
+```go
+dict := map[string]string{
+    "good":  "iyi",
+    "great": "harika",
+}
+
+// Get a value by key
+value := dict["good"]
+fmt.Println(value)  // "iyi"
+
+// Non-existent key returns zero value
+value = dict["missing"]
+fmt.Println(value)  // "" (empty string)
+```
+
+### The "Comma OK" Idiom
+
+Check if a key exists using the two-value assignment:
+
+```go
+dict := map[string]string{
+    "good":    "iyi",
+    "mistake": "",  // Empty string is a valid value
+}
+
+// Check if key exists
+value, ok := dict["good"]
+if ok {
+    fmt.Printf("Found: %s\n", value)  // Found: iyi
+}
+
+// Check for non-existent key
+value, ok = dict["missing"]
+if !ok {
+    fmt.Println("Key not found")  // Key not found
+}
+
+// Distinguish between missing key and empty value
+value, ok = dict["mistake"]
+if ok {
+    fmt.Println("Key exists with empty value")
+}
+```
+
+<Tip>
+Use the comma-ok idiom to distinguish between a missing key and a key with a zero value.
+</Tip>
+
+### Deleting Keys
+
+Use the `delete()` function to remove key-value pairs:
+
+```go
+dict := map[string]string{
+    "good":  "iyi",
+    "great": "harika",
+}
+
+delete(dict, "good")
+fmt.Println(dict)  // map[great:harika]
+
+// Deleting a non-existent key is safe (no-op)
+delete(dict, "missing")  // No error
+```
+
+### Map Length
+
+```go
+dict := map[string]string{
+    "good":  "iyi",
+    "great": "harika",
+}
+
+fmt.Println(len(dict))  // 2
+
+dict["perfect"] = "mükemmel"
+fmt.Println(len(dict))  // 3
+```
+
+## Iterating Over Maps
+
+Use a `for range` loop to iterate over maps:
+
+```go
+dict := map[string]string{
+    "good":    "iyi",
+    "great":   "harika",
+    "perfect": "mükemmel",
+}
+
+// Iterate over keys and values
+for key, value := range dict {
+    fmt.Printf("%q means %q\n", key, value)
+}
+
+// Iterate over keys only
+for key := range dict {
+    fmt.Println(key)
+}
+
+// Iterate over values only
+for _, value := range dict {
+    fmt.Println(value)
+}
+```
+
+<Warning>
+**Map iteration order is random!** Go intentionally randomizes the iteration order. Don't rely on any particular order.
+</Warning>
+
+## Map Keys
+
+### Key Type Requirements
+
+Map keys must be **comparable** types. This includes:
+
+- Basic types: `int`, `float64`, `string`, `bool`
+- Pointers
+- Arrays (if element type is comparable)
+- Structs (if all fields are comparable)
+- Interfaces
+
+```go
+// Valid key types
+var intMap map[int]string
+var stringMap map[string]int
+var structMap map[struct{ x, y int }]string
+var arrayMap map[[3]int]bool
+
+// Invalid key types (not comparable)
+var sliceMap map[[]int]string     // ❌ Compile error
+var mapMap map[map[int]string]bool  // ❌ Compile error
+```
+
+### Using Structs as Keys
+
+```go
+type Point struct {
+    X, Y int
+}
+
+locations := map[Point]string{
+    {0, 0}:  "origin",
+    {1, 2}:  "point A",
+    {-1, 5}: "point B",
+}
+
+fmt.Println(locations[Point{1, 2}])  // "point A"
+```
+
+## Map Values
+
+Map values can be **any type**, including complex types:
+
+```go
+// Map of slices
+groups := map[string][]string{
+    "colors": {"red", "blue", "green"},
+    "sizes":  {"small", "medium", "large"},
+}
+
+// Map of maps
+users := map[string]map[string]string{
+    "user1": {
+        "name":  "Alice",
+        "email": "alice@example.com",
+    },
+    "user2": {
+        "name":  "Bob",
+        "email": "bob@example.com",
+    },
+}
+
+// Map of structs
+type User struct {
+    Name  string
+    Email string
+}
+
+userMap := map[string]User{
+    "user1": {"Alice", "alice@example.com"},
+    "user2": {"Bob", "bob@example.com"},
+}
+```
+
+## Maps are Reference Types
+
+Maps are reference types. Assigning a map to another variable doesn't copy the data:
+
+```go
+original := map[string]int{
+    "a": 1,
+    "b": 2,
+}
+
+copy := original
+
+// Modifying copy affects original
+copy["c"] = 3
+
+fmt.Println(original)  // map[a:1 b:2 c:3]
+fmt.Println(copy)      // map[a:1 b:2 c:3]
+```
+
+### Copying Maps
+
+To create an independent copy, manually copy elements:
+
+```go
+original := map[string]int{
+    "a": 1,
+    "b": 2,
+}
+
+// Create a new map and copy elements
+copied := make(map[string]int)
+for k, v := range original {
+    copied[k] = v
+}
+
+// Now they're independent
+copied["c"] = 3
+
+fmt.Println(original)  // map[a:1 b:2]
+fmt.Println(copied)    // map[a:1 b:2 c:3]
+```
+
+## Comparing Maps
+
+Maps **cannot be compared** with `==` or `!=` (except to `nil`):
+
+```go
+map1 := map[string]int{"a": 1}
+map2 := map[string]int{"a": 1}
+
+// This is valid
+fmt.Println(map1 == nil)  // false
+
+// This is invalid
+// fmt.Println(map1 == map2)  // ❌ Compile error
+```
+
+To compare maps, write a custom comparison function:
+
+```go
+func mapsEqual(m1, m2 map[string]int) bool {
+    if len(m1) != len(m2) {
+        return false
+    }
+    for k, v1 := range m1 {
+        if v2, ok := m2[k]; !ok || v1 != v2 {
+            return false
+        }
+    }
+    return true
+}
+```
+
+## Practical Example: English Dictionary
+
+```go
+func main() {
+    args := os.Args[1:]
+    if len(args) != 1 {
+        fmt.Println("Usage: dict [english word]")
+        return
+    }
+    query := args[0]
+
+    // Create dictionary
+    dict := map[string]string{
+        "good":    "iyi",
+        "great":   "harika",
+        "perfect": "mükemmel",
+    }
+
+    // Add more words
+    dict["up"] = "yukarı"
+    dict["down"] = "aşağı"
+
+    // Look up word
+    if value, ok := dict[query]; ok {
+        fmt.Printf("%q means %q\n", query, value)
+    } else {
+        fmt.Printf("%q not found\n", query)
+    }
+}
+```
+
+## Common Patterns
+
+### Counting Occurrences
+
+```go
+words := []string{"apple", "banana", "apple", "cherry", "banana", "apple"}
+
+counts := make(map[string]int)
+for _, word := range words {
+    counts[word]++
+}
+
+fmt.Println(counts)  // map[apple:3 banana:2 cherry:1]
+```
+
+### Grouping Items
+
+```go
+type Student struct {
+    Name  string
+    Grade string
+}
+
+students := []Student{
+    {"Alice", "A"},
+    {"Bob", "B"},
+    {"Charlie", "A"},
+    {"Diana", "B"},
+}
+
+byGrade := make(map[string][]Student)
+for _, student := range students {
+    byGrade[student.Grade] = append(byGrade[student.Grade], student)
+}
+
+fmt.Println(byGrade["A"])  // [{Alice A} {Charlie A}]
+```
+
+### Set Implementation
+
+```go
+// Use map[T]bool or map[T]struct{} for sets
+seen := make(map[string]bool)
+
+words := []string{"apple", "banana", "apple", "cherry"}
+
+for _, word := range words {
+    if !seen[word] {
+        fmt.Println("First time seeing:", word)
+        seen[word] = true
+    }
+}
+```
+
+### Caching/Memoization
+
+```go
+cache := make(map[int]int)
+
+func fibonacci(n int) int {
+    if n <= 1 {
+        return n
+    }
+    
+    // Check cache
+    if val, ok := cache[n]; ok {
+        return val
+    }
+    
+    // Calculate and cache
+    result := fibonacci(n-1) + fibonacci(n-2)
+    cache[n] = result
+    return result
+}
+```
+
+## Performance Characteristics
+
+<CardGroup cols={2}>
+  <Card title="Average Case" icon="gauge-high">
+    - Lookup: O(1)
+    - Insert: O(1)
+    - Delete: O(1)
+  </Card>
+  <Card title="Map Growth" icon="chart-line">
+    Maps automatically resize when needed. Pre-allocate with `make(map[K]V, capacity)` if you know the approximate size.
+  </Card>
+</CardGroup>
+
+## Key Takeaways
+
+<AccordionGroup>
+  <Accordion title="Initialize Before Use">
+    Use map literals or `make()` to create maps. Don't assign to nil maps.
+  </Accordion>
+  
+  <Accordion title="Fast Lookups">
+    Map lookups are O(1) on average, making them perfect for fast key-based access.
+  </Accordion>
+  
+  <Accordion title="Comma-OK Idiom">
+    Use `value, ok := map[key]` to check if a key exists and distinguish from zero values.
+  </Accordion>
+  
+  <Accordion title="Reference Type">
+    Maps are references. Assigning or passing a map doesn't copy its contents.
+  </Accordion>
+  
+  <Accordion title="Unordered">
+    Map iteration order is random. Sort keys explicitly if you need consistent ordering.
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Structs](/data-structures/structs) - Create custom types for map values
+- [Slices](/data-structures/slices) - Dynamic arrays, often used with maps
+- [Strings, Runes, and Bytes](/data-structures/strings-runes-bytes) - Common map key type

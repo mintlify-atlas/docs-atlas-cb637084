@@ -1,0 +1,400 @@
+---
+title: Spam Masker
+description: Mask URLs in text using byte manipulation and string processing
+icon: mask
+---
+
+Build a command-line tool that detects and masks HTTP URLs in text by replacing them with asterisks, using direct byte manipulation.
+
+## What You'll Build
+
+A text processing program that:
+- Accepts text input via command-line arguments
+- Detects URLs starting with `http://`
+- Masks the URL content with asterisks
+- Preserves the `http://` prefix
+- Stops masking at whitespace
+- Uses efficient byte slice operations
+
+## What You'll Learn
+
+- Direct byte manipulation in strings
+- Efficient byte buffer usage
+- Pattern detection in text
+- Slice operations and capacity management
+- Working with byte slices vs strings
+- State tracking in loops
+
+## Challenge Rules
+
+<Warning>
+**Important Constraints:**
+- Don't use standard library string functions
+- Solve using byte manipulation only (indexing, slicing, appending)
+- Be efficient: avoid string concatenation (`+` operator)
+- Use a byte slice buffer instead
+- Only mask links starting with `http://` (lowercase)
+- Case-sensitive matching is acceptable for this exercise
+</Warning>
+
+## Expected Behavior
+
+```go
+// Input:
+"Here's my spammy page: http://youth-elixir.com buy now!"
+
+// Output:
+"Here's my spammy page: http://**************** buy now!"
+```
+
+```go
+// Input with adjacent text:
+"Here: http://www.mylink.comHAHAHA see you."
+
+// Output:
+"Here: http://******************* see you."
+```
+
+## Step-by-Step Approach
+
+<Steps>
+  <Step title="Get and Check Input">
+    Validate command-line arguments.
+    
+    ```go
+    package main
+
+    import (
+        "fmt"
+        "os"
+    )
+
+    func main() {
+        args := os.Args[1:]
+        if len(args) != 1 {
+            fmt.Println("gimme somethin' to mask!")
+            return
+        }
+        
+        text := args[0]
+        // Process text...
+    }
+    ```
+  </Step>
+  
+  <Step title="Create a Byte Buffer">
+    Set up the output buffer.
+    
+    ```go
+    const (
+        link  = "http://"
+        nlink = len(link)  // 7
+    )
+
+    var (
+        text = args[0]
+        size = len(text)
+        buf  = make([]byte, 0, size)
+    )
+    ```
+    
+    Pre-allocate the buffer with the input size for efficiency.
+  </Step>
+  
+  <Step title="Detect the Link Pattern">
+    Loop through input and detect `http://` patterns.
+    
+    ```go
+    for i := 0; i < size; i++ {
+        // Check if we have enough characters left
+        // and if current position starts with "http://"
+        if len(text[i:]) >= nlink && text[i:i+nlink] == link {
+            // We found a link!
+            // Add "http://" to buffer
+            buf = append(buf, link...)
+            
+            // Skip past "http://"
+            i += nlink
+        }
+        
+        // Copy current character to buffer
+        buf = append(buf, text[i])
+    }
+    
+    fmt.Println(string(buf))
+    ```
+  </Step>
+  
+  <Step title="Mask the Link Content">
+    Replace link characters with asterisks.
+    
+    ```go
+    const mask = '*'
+    var in bool  // Are we inside a link?
+
+    for i := 0; i < size; i++ {
+        // Detect link start
+        if len(text[i:]) >= nlink && text[i:i+nlink] == link {
+            in = true
+            buf = append(buf, link...)
+            i += nlink
+        }
+
+        // Get current character
+        c := text[i]
+
+        // Stop masking at whitespace
+        switch c {
+        case ' ', '\t', '\n':
+            in = false
+        }
+
+        // Mask if we're inside a link
+        if in {
+            c = mask
+        }
+        
+        buf = append(buf, c)
+    }
+    
+    fmt.Println(string(buf))
+    ```
+  </Step>
+</Steps>
+
+## Complete Solution
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+const (
+	link  = "http://"
+	nlink = len(link)
+	mask  = '*'
+)
+
+func main() {
+	args := os.Args[1:]
+	if len(args) != 1 {
+		fmt.Println("gimme somethin' to mask!")
+		return
+	}
+
+	var (
+		text = args[0]
+		size = len(text)
+		buf  = make([]byte, 0, size)
+		in bool  // Link detection flag
+	)
+
+	for i := 0; i < size; i++ {
+		// Detect link pattern
+		if len(text[i:]) >= nlink && text[i:i+nlink] == link {
+			// Set flag: we're in a link
+			in = true
+
+			// Add the "http://" prefix
+			buf = append(buf, link...)
+
+			// Jump past "http://"
+			i += nlink
+		}
+
+		// Get current byte
+		c := text[i]
+
+		// Disable link detection at whitespace
+		switch c {
+		case ' ', '\t', '\n':
+			in = false
+		}
+
+		// Mask character if inside link
+		if in {
+			c = mask
+		}
+		buf = append(buf, c)
+	}
+
+	// Print buffer as string
+	fmt.Println(string(buf))
+}
+```
+
+## Running the Program
+
+```bash
+# Simple example
+go run main.go "Check this: http://spam.com out!"
+# Output: Check this: http://******** out!
+
+# Multiple links
+go run main.go "Visit http://site1.com and http://site2.com now"
+# Output: Visit http://********* and http://********* now
+
+# Link at the end
+go run main.go "Go to http://example.com"
+# Output: Go to http://***********
+```
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="String vs Byte Slices">
+    ```go
+    str := "hello"
+    
+    // Strings are immutable
+    // str[0] = 'H'  // ❌ Cannot modify
+    
+    // Convert to byte slice to modify
+    bytes := []byte(str)
+    bytes[0] = 'H'  // ✅ Can modify
+    
+    // Convert back to string
+    str = string(bytes)  // "Hello"
+    ```
+  </Accordion>
+  
+  <Accordion title="Slice Pattern Matching">
+    ```go
+    text := "hello world"
+    pattern := "world"
+    n := len(pattern)
+    
+    // Check if pattern exists at position i
+    i := 6
+    if len(text[i:]) >= n && text[i:i+n] == pattern {
+        fmt.Println("Found pattern at", i)
+    }
+    
+    // Why check len(text[i:]) >= n?
+    // Prevents slicing beyond string bounds
+    ```
+  </Accordion>
+  
+  <Accordion title="Efficient Buffer Operations">
+    ```go
+    // ❌ Inefficient (creates new strings)
+    result := ""
+    for i := 0; i < 1000; i++ {
+        result += "x"  // Allocates new string each time
+    }
+    
+    // ✅ Efficient (reuses buffer)
+    buf := make([]byte, 0, 1000)
+    for i := 0; i < 1000; i++ {
+        buf = append(buf, 'x')  // Amortized O(1)
+    }
+    result := string(buf)
+    ```
+  </Accordion>
+  
+  <Accordion title="State Tracking with Flags">
+    ```go
+    var inLink bool  // Boolean flag for state
+    
+    for i, c := range text {
+        if /* detect link start */ {
+            inLink = true
+        }
+        
+        if /* detect link end */ {
+            inLink = false
+        }
+        
+        if inLink {
+            // Do something different
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common Pitfalls
+
+<Warning>
+**Index Out of Bounds:**
+```go
+// ❌ Dangerous - can panic
+if text[i:i+7] == "http://" {
+    // Panic if i+7 > len(text)
+}
+
+// ✅ Safe - checks bounds first
+if len(text[i:]) >= 7 && text[i:i+7] == "http://" {
+    // Only checks if enough characters remain
+}
+```
+</Warning>
+
+<Warning>
+**Loop Index Manipulation:**
+```go
+// When you skip ahead:
+for i := 0; i < size; i++ {
+    if /* found pattern */ {
+        i += 7  // Skip ahead
+        // Note: loop will still do i++ at end
+    }
+    // So actual skip is 8 characters total
+}
+```
+</Warning>
+
+## Enhancements to Try
+
+1. **Case-insensitive matching** - Match `HTTP://`, `Http://`, etc.
+2. **HTTPS support** - Also mask `https://` URLs
+3. **Email masking** - Detect and mask email addresses
+4. **Regex-free phone masking** - Mask phone numbers
+5. **Preserve domain** - Mask only the path: `http://site.com/***`
+6. **Unicode support** - Use `unicode.IsSpace` for better whitespace detection
+7. **Multiple patterns** - Mask different types of sensitive data
+
+## Testing Ideas
+
+```go
+// Edge cases to test:
+"http://"                          // Just the prefix
+"http://x"                         // Minimal URL
+"text http://url.com more text"   // URL in middle
+"http://url1.com http://url2.com" // Multiple URLs
+"no urls here"                     // No URLs
+"HTTP://uppercase.com"             // Wrong case (should not mask)
+"http://url.com\ttab"              // Tab separator
+"http://url.com\nnewline"          // Newline separator
+```
+
+## Alternative Approaches
+
+<Tip>
+**Using unicode.IsSpace:**
+```go
+import "unicode"
+
+// More robust whitespace detection
+if unicode.IsSpace(rune(c)) {
+    in = false
+}
+```
+
+This handles tabs, newlines, and various Unicode spaces.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Text Wrapper" icon="text-width" href="/projects/text-wrapper">
+    Another text processing project
+  </Card>
+  
+  <Card title="Strings Guide" icon="font" href="/data-structures/strings-runes-bytes">
+    Learn more about string operations
+  </Card>
+</CardGroup>

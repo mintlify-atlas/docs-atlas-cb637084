@@ -1,0 +1,346 @@
+---
+title: 'Function Basics'
+description: 'Learn the fundamentals of functions in Go, including declarations, parameters, return values, and pass-by-value semantics'
+---
+
+## Introduction
+
+Functions are the building blocks of Go programs. They encapsulate logic into reusable units, making code more modular, testable, and maintainable. In Go, functions are first-class citizens with clean syntax and powerful features.
+
+## Function Declaration
+
+A function in Go is declared using the `func` keyword, followed by the function name, parameters, return type(s), and body:
+
+```go
+func functionName(param1 type1, param2 type2) returnType {
+    // function body
+    return value
+}
+```
+
+### Basic Example
+
+```go
+func show(n int) {
+    fmt.Printf("show  → n = %d\n", n)
+}
+
+func incr(n int) int {
+    n++
+    return n
+}
+```
+
+<Tip>
+When multiple parameters share the same type, you can group them: `func add(a, b int)` instead of `func add(a int, b int)`.
+</Tip>
+
+## Parameters and Arguments
+
+Functions receive data through parameters. In Go, **all arguments are passed by value**, meaning the function receives a copy of the data.
+
+### Single Parameter
+
+```go
+func show(n int) {
+    fmt.Printf("show  → n = %d\n", n)
+}
+
+local := 10
+show(local) // Output: show  → n = 10
+```
+
+### Multiple Parameters
+
+```go
+func incrBy(n, factor int) int {
+    return n * factor
+}
+
+result := incrBy(10, 5)
+fmt.Println(result) // Output: 50
+```
+
+## Return Values
+
+Functions can return zero, one, or multiple values.
+
+### Single Return Value
+
+```go
+func incr(n int) int {
+    n++
+    return n
+}
+
+x := 10
+x = incr(x)
+fmt.Println(x) // Output: 11
+```
+
+### Multiple Return Values
+
+Go functions can return multiple values, commonly used for returning both a result and an error:
+
+```go
+func incrByStr(n int, factor string) (int, error) {
+    m, err := strconv.Atoi(factor)
+    n = incrBy(n, m)
+    return n, err
+}
+
+result, err := incrByStr(10, "5")
+if err != nil {
+    fmt.Printf("err   → %s\n", err)
+}
+```
+
+<Warning>
+Always handle errors returned by functions. Ignoring errors with the blank identifier `_` can hide bugs and unexpected behavior.
+</Warning>
+
+### Named Return Values
+
+You can name return values in the function signature. Named returns are automatically initialized to their zero values:
+
+```go
+func limit(n, lim int) (m int) {
+    m = n
+    if m >= lim {
+        m = lim
+    }
+    return // naked return
+}
+```
+
+<Note>
+Named return values enable "naked returns" where you simply use `return` without specifying values. However, use this feature sparingly as it can reduce code clarity.
+</Note>
+
+## Pass-by-Value Semantics
+
+Go is a **100% pass-by-value language**. When you pass a variable to a function, the function receives a copy, not the original.
+
+### The Problem
+
+```go
+func incrWrong(n int) {
+    n++ // modifies the copy, not the original
+}
+
+local := 10
+incrWrong(local)
+fmt.Println(local) // Output: 10 (unchanged!)
+```
+
+### The Solution
+
+To modify a value, return it and reassign:
+
+```go
+func incr(n int) int {
+    n++
+    return n
+}
+
+local := 10
+local = incr(local)
+fmt.Println(local) // Output: 11
+```
+
+### Special Cases: Maps and Slices
+
+While Go is pass-by-value, **maps** contain pointers internally, so functions can modify map contents:
+
+```go
+func incrAll(stats map[int]int) {
+    for k := range stats {
+        stats[k]++ // modifies the original map
+    }
+}
+
+stats := map[int]int{1: 10, 10: 2}
+incrAll(stats)
+fmt.Print(stats) // Output: map[1:11 10:3]
+```
+
+However, slices behave differently. A slice header is passed by value, so appending doesn't affect the original:
+
+```go
+func add(stats []int, n int) {
+    stats = append(stats, n) // updates the copy, not original
+}
+
+stats := []int{10, 5}
+add(stats, 2)
+fmt.Print(stats) // Output: [10 5] (unchanged!)
+```
+
+<Tip>
+To update a slice, return the modified slice and reassign it:
+```go
+func add(stats []int, n int) []int {
+    return append(stats, n)
+}
+stats = add(stats, 2)
+```
+</Tip>
+
+## Function Chaining
+
+Functions can be chained together when the output of one matches the input of another:
+
+```go
+func sanitize(n int, err error) int {
+    if err != nil {
+        return 0
+    }
+    return n
+}
+
+// Chain functions together
+local := sanitize(incrByStr(local, "2"))
+show(local)
+
+local = limit(incrBy(local, 5), 2000)
+show(local)
+```
+
+## Scope and Package-Level Variables
+
+Functions have their own local scope and cannot directly access variables from other functions:
+
+```go
+func main() {
+    local := 10
+    show(local)
+}
+
+func show(n int) {
+    // Can't access main's 'local' variable
+    // Must use the parameter 'n'
+    fmt.Printf("show  → n = %d\n", n)
+}
+```
+
+### Avoid Package-Level Variables
+
+While Go allows package-level variables, they should be avoided:
+
+```go
+// BAD: Global mutable state
+var N int
+
+func incrN() {
+    N++ // Anyone can modify this
+}
+```
+
+<Warning>
+Package-level variables increase code coupling and create fragile, hard-to-test code. Prefer passing data through function parameters and return values.
+</Warning>
+
+## Real-World Example: Log Parser
+
+Here's a practical example showing functions in action:
+
+```go
+type result struct {
+    domain string
+    visits int
+}
+
+type parser struct {
+    sum     map[string]result
+    domains []string
+    total   int
+    lines   int
+}
+
+func newParser() parser {
+    return parser{sum: make(map[string]result)}
+}
+
+func parse(p parser, line string) (parsed result, err error) {
+    fields := strings.Fields(line)
+    if len(fields) != 2 {
+        err = fmt.Errorf("wrong input: %v (line #%d)", fields, p.lines)
+        return
+    }
+    
+    parsed.domain = fields[0]
+    parsed.visits, err = strconv.Atoi(fields[1])
+    if parsed.visits < 0 || err != nil {
+        err = fmt.Errorf("wrong input: %q (line #%d)", fields[1], p.lines)
+        return
+    }
+    
+    return
+}
+
+func update(p parser, parsed result) parser {
+    domain, visits := parsed.domain, parsed.visits
+    
+    if _, ok := p.sum[domain]; !ok {
+        p.domains = append(p.domains, domain)
+    }
+    
+    p.total += visits
+    p.sum[domain] = result{
+        domain: domain,
+        visits: visits + p.sum[domain].visits,
+    }
+    
+    return p
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep Functions Small" icon="minimize">
+    Each function should do one thing well. If a function is too long, break it into smaller functions.
+  </Card>
+  
+  <Card title="Use Descriptive Names" icon="tag">
+    Function names should clearly describe what they do: `parseLogLine` is better than `parse`.
+  </Card>
+  
+  <Card title="Return Errors" icon="triangle-exclamation">
+    When operations can fail, return an error. Let callers decide how to handle failures.
+  </Card>
+  
+  <Card title="Minimize Side Effects" icon="shield">
+    Prefer pure functions that don't modify global state. Pass data in and out explicitly.
+  </Card>
+</CardGroup>
+
+## Common Pitfalls
+
+1. **Forgetting that Go is pass-by-value**: Changes to parameters don't affect the original unless you return and reassign.
+
+2. **Ignoring return values**: Always check errors and use returned values appropriately.
+
+3. **Using package-level variables**: They create hidden dependencies and make testing difficult.
+
+4. **Not declaring return types**: If your function returns a value, always declare its type in the signature.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Variadic Functions" icon="ellipsis" href="/functions/variadic">
+    Learn how to write functions that accept variable numbers of arguments
+  </Card>
+  
+  <Card title="Closures" icon="lock" href="/functions/closures">
+    Discover how functions can capture and remember their surrounding state
+  </Card>
+  
+  <Card title="Higher-Order Functions" icon="layer-group" href="/functions/higher-order">
+    Explore functions that take or return other functions
+  </Card>
+  
+  <Card title="Deferred Functions" icon="clock" href="/functions/deferred">
+    Master the defer keyword for cleanup and resource management
+  </Card>
+</CardGroup>

@@ -1,0 +1,630 @@
+---
+title: "Design Patterns in Go"
+description: "Common design patterns demonstrated in the Learn Go course materials"
+icon: "diagram-project"
+---
+
+## Overview
+
+This guide covers design patterns and architectural approaches found throughout the Learn Go course. These patterns are demonstrated in real projects like the tic-tac-toe game, log parser, and various other examples.
+
+## Structural Patterns
+
+### Composition Over Inheritance
+
+Go doesn't have inheritance, but uses composition through embedding.
+
+```go From 24-structs/04-embedding
+// Base components
+type Address struct {
+    Street string
+    City   string
+    Zip    string
+}
+
+type Contact struct {
+    Email string
+    Phone string
+}
+
+// Composed struct
+type Person struct {
+    Name    string
+    Address // Embedded - promotes fields
+    Contact // Embedded
+}
+
+// Usage - embedded fields are promoted
+person := Person{
+    Name: "Alice",
+}
+person.Street = "123 Main St"  // Direct access
+person.Email = "alice@example.com"
+```
+
+<Tip>
+Embedding promotes the embedded type's fields and methods to the outer type, creating a composition relationship.
+</Tip>
+
+### Interface Segregation
+
+```go From interfaces examples
+// Small, focused interfaces
+type Printer interface {
+    Print()
+}
+
+type Discounter interface {
+    Discount() float64
+}
+
+// Types implement only what they need
+type Book struct {
+    title string
+    price float64
+}
+
+func (b Book) Print() {
+    fmt.Printf("%s: $%.2f\n", b.title, b.price)
+}
+
+type Game struct {
+    title string
+    price float64
+}
+
+func (g *Game) Print() {
+    fmt.Printf("%s: $%.2f\n", g.title, g.price)
+}
+
+func (g *Game) Discount() float64 {
+    return g.price * 0.5
+}
+```
+
+### Strategy Pattern
+
+```go Inspired by x-tba/tictactoe/16-types
+// Define the strategy interface
+type Renderer interface {
+    Render(board Board) string
+}
+
+// Concrete strategies
+type ASCIIRenderer struct{}
+
+func (r ASCIIRenderer) Render(board Board) string {
+    // ASCII rendering logic
+    return "X | O | X\n---------\n..."
+}
+
+type UnicodeRenderer struct{}
+
+func (r UnicodeRenderer) Render(board Board) string {
+    // Unicode rendering logic
+    return "✗ │ ⭕ │ ✗\n─────────\n..."
+}
+
+// Context uses the strategy
+type Game struct {
+    board    Board
+    renderer Renderer
+}
+
+func (g *Game) Display() {
+    output := g.renderer.Render(g.board)
+    fmt.Println(output)
+}
+
+// Usage
+game := Game{
+    board:    NewBoard(),
+    renderer: UnicodeRenderer{},
+}
+```
+
+## Behavioral Patterns
+
+### Iterator Pattern (Using Range)
+
+```go
+// Go's range provides built-in iteration
+type Playlist struct {
+    songs []string
+}
+
+func (p *Playlist) Add(song string) {
+    p.songs = append(p.songs, song)
+}
+
+// Return slice for range iteration
+func (p *Playlist) Songs() []string {
+    return p.songs
+}
+
+// Usage
+playlist := &Playlist{}
+playlist.Add("Song 1")
+playlist.Add("Song 2")
+
+for i, song := range playlist.Songs() {
+    fmt.Printf("%d: %s\n", i, song)
+}
+```
+
+### State Pattern
+
+```go Inspired by x-tba/tictactoe examples
+// Define states
+type GameState int
+
+const (
+    StateInit GameState = iota
+    StatePlaying
+    StateWon
+    StateDraw
+    StateQuit
+)
+
+// Game with state
+type Game struct {
+    state  GameState
+    board  Board
+    turn   Player
+}
+
+// State-dependent behavior
+func (g *Game) HandleInput(input string) error {
+    switch g.state {
+    case StateInit:
+        return g.handleInit(input)
+    case StatePlaying:
+        return g.handlePlaying(input)
+    case StateWon, StateDraw:
+        return g.handleEnded(input)
+    default:
+        return errors.New("invalid state")
+    }
+}
+
+func (g *Game) handlePlaying(input string) error {
+    // Process move
+    if err := g.board.Place(input, g.turn); err != nil {
+        return err
+    }
+    
+    // Check win condition
+    if g.board.HasWinner() {
+        g.state = StateWon
+        return nil
+    }
+    
+    if g.board.IsFull() {
+        g.state = StateDraw
+    }
+    
+    g.turn = g.turn.Next()
+    return nil
+}
+```
+
+### Command Pattern
+
+```go From project examples
+// Command interface
+type Command interface {
+    Execute() error
+}
+
+// Concrete commands
+type MoveCommand struct {
+    board    *Board
+    position int
+    player   Player
+}
+
+func (c *MoveCommand) Execute() error {
+    return c.board.PlaceAt(c.position, c.player)
+}
+
+type UndoCommand struct {
+    board    *Board
+    position int
+}
+
+func (c *UndoCommand) Execute() error {
+    c.board.Clear(c.position)
+    return nil
+}
+
+// Invoker
+type GameController struct {
+    history []Command
+}
+
+func (gc *GameController) Execute(cmd Command) error {
+    if err := cmd.Execute(); err != nil {
+        return err
+    }
+    gc.history = append(gc.history, cmd)
+    return nil
+}
+```
+
+## Creational Patterns
+
+### Factory Function
+
+```go From course examples
+// Instead of constructors, use New functions
+func NewGame(skin string) *Game {
+    return &Game{
+        board:  NewBoard(),
+        skin:   parseSkin(skin),
+        turn:   PlayerX,
+        state:  StateInit,
+    }
+}
+
+func NewBoard() Board {
+    return Board{
+        cells: make([]Cell, 9),
+    }
+}
+
+// Usage
+game := NewGame("unicode")
+```
+
+<Info>
+The `New` prefix is idiomatic in Go for constructor functions. Use `NewType` for the default constructor.
+</Info>
+
+### Builder Pattern
+
+```go
+// Builder for complex objects
+type PersonBuilder struct {
+    person *Person
+}
+
+func NewPersonBuilder() *PersonBuilder {
+    return &PersonBuilder{
+        person: &Person{},
+    }
+}
+
+func (b *PersonBuilder) Name(name string) *PersonBuilder {
+    b.person.Name = name
+    return b
+}
+
+func (b *PersonBuilder) Age(age int) *PersonBuilder {
+    b.person.Age = age
+    return b
+}
+
+func (b *PersonBuilder) Email(email string) *PersonBuilder {
+    b.person.Email = email
+    return b
+}
+
+func (b *PersonBuilder) Build() *Person {
+    return b.person
+}
+
+// Usage - fluent interface
+person := NewPersonBuilder().
+    Name("Alice").
+    Age(30).
+    Email("alice@example.com").
+    Build()
+```
+
+### Singleton Pattern
+
+```go
+// Package-level variable (lazy initialization)
+var (
+    instance *Database
+    once     sync.Once
+)
+
+func GetDatabase() *Database {
+    once.Do(func() {
+        instance = &Database{
+            // Initialize
+        }
+    })
+    return instance
+}
+```
+
+## Functional Patterns
+
+### Option Pattern
+
+```go
+// For configurable constructors
+type GameOption func(*Game)
+
+func WithSkin(skin string) GameOption {
+    return func(g *Game) {
+        g.skin = parseSkin(skin)
+    }
+}
+
+func WithPlayers(p1, p2 string) GameOption {
+    return func(g *Game) {
+        g.player1 = p1
+        g.player2 = p2
+    }
+}
+
+func NewGame(options ...GameOption) *Game {
+    g := &Game{
+        board: NewBoard(),
+        turn:  PlayerX,
+    }
+    
+    for _, opt := range options {
+        opt(g)
+    }
+    
+    return g
+}
+
+// Usage
+game := NewGame(
+    WithSkin("unicode"),
+    WithPlayers("Alice", "Bob"),
+)
+```
+
+<Tip>
+The Option pattern is idiomatic in Go for creating flexible APIs with optional configuration.
+</Tip>
+
+### Pipeline Pattern
+
+```go From log parser examples
+// Pipeline stages
+func ReadLines(filename string) <-chan string {
+    out := make(chan string)
+    go func() {
+        defer close(out)
+        // Read and send lines
+    }()
+    return out
+}
+
+func ParseLines(in <-chan string) <-chan LogEntry {
+    out := make(chan LogEntry)
+    go func() {
+        defer close(out)
+        for line := range in {
+            if entry, err := Parse(line); err == nil {
+                out <- entry
+            }
+        }
+    }()
+    return out
+}
+
+func FilterErrors(in <-chan LogEntry) <-chan LogEntry {
+    out := make(chan LogEntry)
+    go func() {
+        defer close(out)
+        for entry := range in {
+            if entry.Level == "ERROR" {
+                out <- entry
+            }
+        }
+    }()
+    return out
+}
+
+// Usage - compose pipeline
+lines := ReadLines("app.log")
+entries := ParseLines(lines)
+errors := FilterErrors(entries)
+
+for err := range errors {
+    fmt.Println(err)
+}
+```
+
+## Data Access Patterns
+
+### Repository Pattern
+
+```go
+// Define repository interface
+type GameRepository interface {
+    Save(game *Game) error
+    Load(id string) (*Game, error)
+    Delete(id string) error
+}
+
+// Concrete implementation
+type FileRepository struct {
+    basePath string
+}
+
+func NewFileRepository(path string) *FileRepository {
+    return &FileRepository{basePath: path}
+}
+
+func (r *FileRepository) Save(game *Game) error {
+    data, err := json.Marshal(game)
+    if err != nil {
+        return err
+    }
+    
+    filename := filepath.Join(r.basePath, game.ID+".json")
+    return os.WriteFile(filename, data, 0644)
+}
+
+func (r *FileRepository) Load(id string) (*Game, error) {
+    filename := filepath.Join(r.basePath, id+".json")
+    data, err := os.ReadFile(filename)
+    if err != nil {
+        return nil, err
+    }
+    
+    var game Game
+    if err := json.Unmarshal(data, &game); err != nil {
+        return nil, err
+    }
+    
+    return &game, nil
+}
+```
+
+## Error Handling Patterns
+
+### Sentinel Errors
+
+```go
+// Define package-level errors
+var (
+    ErrInvalidMove = errors.New("invalid move")
+    ErrGameOver    = errors.New("game is over")
+    ErrOutOfBounds = errors.New("position out of bounds")
+)
+
+// Usage
+func (g *Game) PlaceMove(pos int) error {
+    if g.state == StateWon || g.state == StateDraw {
+        return ErrGameOver
+    }
+    
+    if pos < 0 || pos >= 9 {
+        return ErrOutOfBounds
+    }
+    
+    if !g.board.IsEmpty(pos) {
+        return ErrInvalidMove
+    }
+    
+    return g.board.Place(pos, g.turn)
+}
+
+// Checking specific errors
+if err := game.PlaceMove(5); err != nil {
+    if errors.Is(err, ErrInvalidMove) {
+        fmt.Println("That position is taken!")
+    }
+}
+```
+
+### Error Wrapping
+
+```go From 11-if examples
+func processFile(filename string) error {
+    data, err := readFile(filename)
+    if err != nil {
+        return fmt.Errorf("failed to read %s: %w", filename, err)
+    }
+    
+    if err := validate(data); err != nil {
+        return fmt.Errorf("validation failed: %w", err)
+    }
+    
+    return nil
+}
+
+// Unwrapping errors
+err := processFile("data.txt")
+if err != nil {
+    if errors.Is(err, os.ErrNotExist) {
+        fmt.Println("File doesn't exist")
+    }
+}
+```
+
+## Testing Patterns
+
+### Table-Driven Tests
+
+```go From tictactoe examples
+func TestBoard_Place(t *testing.T) {
+    tests := []struct {
+        name     string
+        position int
+        player   Player
+        wantErr  bool
+    }{
+        {
+            name:     "valid move",
+            position: 0,
+            player:   PlayerX,
+            wantErr:  false,
+        },
+        {
+            name:     "out of bounds",
+            position: 10,
+            player:   PlayerX,
+            wantErr:  true,
+        },
+        {
+            name:     "position taken",
+            position: 0,
+            player:   PlayerO,
+            wantErr:  true,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            board := NewBoard()
+            err := board.Place(tt.position, tt.player)
+            
+            if (err != nil) != tt.wantErr {
+                t.Errorf("Place() error = %v, wantErr %v", err, tt.wantErr)
+            }
+        })
+    }
+}
+```
+
+<Note>
+Table-driven tests are the idiomatic way to test in Go. They make it easy to add test cases and see patterns.
+</Note>
+
+### Test Helpers
+
+```go
+func setupGame(t *testing.T) *Game {
+    t.Helper() // Marks this as a helper function
+    
+    game := NewGame()
+    // Setup logic
+    return game
+}
+
+func TestGameLogic(t *testing.T) {
+    game := setupGame(t)
+    // Test with game
+}
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Best Practices" href="/reference/best-practices" icon="star">
+    Go best practices guide
+  </Card>
+  
+  <Card title="Go Idioms" href="/reference/idioms" icon="code">
+    Common Go idioms
+  </Card>
+  
+  <Card title="Troubleshooting" href="/reference/troubleshooting" icon="wrench">
+    Common issues and solutions
+  </Card>
+  
+  <Card title="Examples" href="/exercises/getting-started" icon="flask">
+    Browse code examples
+  </Card>
+</CardGroup>

@@ -1,0 +1,358 @@
+---
+title: "Numbers and Strings"
+description: "Learn how to work with numeric types and strings in Go"
+---
+
+## Working with Numbers
+
+Go provides powerful operators and operations for working with numeric values.
+
+### Arithmetic Operators
+
+Go supports all standard arithmetic operations:
+
+```go
+// Multiplication and division
+fmt.Println(8 * -4.0)   // -32.0 (result is float when mixing int and float)
+fmt.Println(-4 / 2)     // -2 (both integers = integer result)
+
+// Modulus (remainder) - integers only
+fmt.Println(5 % 2)      // 1
+// fmt.Println(5.0 % 2) // ✗ Error: modulus works only with integers
+
+// Addition and subtraction
+fmt.Println(1 + 2.5)    // 3.5
+fmt.Println(2 - 3)      // -1
+
+// Negation
+fmt.Println(-(-2))      // 2
+fmt.Println(- -2)       // 2 (spaces optional)
+```
+
+<Note>
+**Important rule:** When an integer and float are used together in an expression, the result is always a float.
+</Note>
+
+### Operator Precedence
+
+Mathematical operations follow standard precedence rules (PEMDAS):
+
+```go
+fmt.Println(2 + 2 * 4 / 2)      // 6 (multiplication and division first)
+fmt.Println(2 + ((2 * 4) / 2))  // 6 (same as above, explicit)
+
+fmt.Println(1 + 4 - 2)          // 3 (left to right)
+fmt.Println((1 + 4) - 2)        // 3 (same as above)
+
+fmt.Println((2 + 2) * 4 / 2)    // 8 (parentheses first)
+fmt.Println((2 + 2) * (4 / 2))  // 8 (same result)
+```
+
+**Precedence order (highest to lowest):**
+
+1. Parentheses `()`
+2. Multiplication `*`, Division `/`, Modulus `%`
+3. Addition `+`, Subtraction `-`
+
+<Tip>
+When in doubt, use parentheses to make your intentions clear, even if they're not strictly necessary.
+</Tip>
+
+### Increment and Decrement
+
+Go provides special operators to increase or decrease a value by 1:
+
+```go
+var n int
+
+// These are equivalent:
+// n = n + 1
+// n += 1
+
+// Best way - increment statement
+n++
+fmt.Println(n)  // 1
+
+// Decrement
+n--
+fmt.Println(n)  // 0
+```
+
+<Warning>
+In Go, `++` and `--` are **statements**, not expressions. You cannot use them in expressions like `x = n++` (this is invalid in Go).
+</Warning>
+
+**Valid usage:**
+```go
+n++          // ✓ Valid
+n--          // ✓ Valid
+```
+
+**Invalid usage:**
+```go
+x = n++      // ✗ Error: cannot use n++ as value
+fmt.Println(n++)  // ✗ Error
+```
+
+### Assignment Operations
+
+Combine arithmetic with assignment for concise code:
+
+```go
+var n = 10
+
+n += 5   // n = n + 5  → n is 15
+n -= 3   // n = n - 3  → n is 12
+n *= 2   // n = n * 2  → n is 24
+n /= 4   // n = n / 4  → n is 6
+n %= 4   // n = n % 4  → n is 2
+```
+
+These are shorthand for common operations and make code more readable.
+
+## Working with Strings
+
+Strings in Go are powerful and flexible, with full Unicode support.
+
+### String Literals
+
+Standard string literals use double quotes and support escape sequences:
+
+```go
+var s string
+s = "how are you?"
+fmt.Println(s)
+
+// With escape sequences
+s = "<html>\n\t<body>\"Hello\"</body>\n</html>"
+fmt.Println(s)
+```
+
+### Raw String Literals
+
+Raw string literals use backticks and treat everything literally (no escape sequences):
+
+```go
+s := `how are you?`
+
+// Multi-line strings
+s = `
+<html>
+    <body>"Hello"</body>
+</html>`
+
+fmt.Println(s)
+
+// Windows paths - no need to escape backslashes
+fmt.Println("c:\\my\\dir\\file")  // String literal (escaped)
+fmt.Println(`c:\my\dir\file`)     // Raw string literal (no escaping needed)
+```
+
+<Steps>
+  <Step title="Use double quotes for regular strings">
+    When you need escape sequences like `\n` or `\t`
+  </Step>
+  
+  <Step title="Use backticks for raw strings">
+    When you want literal text, especially multi-line content or paths
+  </Step>
+  
+  <Step title="Choose based on readability">
+    Pick the format that makes your code clearest
+  </Step>
+</Steps>
+
+<Note>
+Raw string literals preserve exact formatting, including newlines and indentation. They're perfect for JSON, HTML, SQL queries, and regex patterns.
+</Note>
+
+### String Concatenation
+
+Join strings together using the `+` operator:
+
+```go
+name, last := "carl", "sagan"
+fmt.Println(name + " " + last)  // "carl sagan"
+```
+
+You can build longer strings:
+
+```go
+greeting := "Hello, "
+name := "World"
+punctuation := "!"
+
+message := greeting + name + punctuation
+fmt.Println(message)  // "Hello, World!"
+```
+
+### Concatenation Assignment
+
+Like numbers, strings support the `+=` operator:
+
+```go
+message := "Hello"
+message += " "
+message += "World"
+fmt.Println(message)  // "Hello World"
+```
+
+### String Length
+
+Get the length of a string using the built-in `len()` function:
+
+```go
+name := "Alice"
+fmt.Println(len(name))  // 5
+
+empty := ""
+fmt.Println(len(empty))  // 0
+```
+
+<Warning>
+`len()` returns the number of **bytes**, not characters. For strings with multi-byte Unicode characters, this distinction matters. The character count may be different from the byte count.
+</Warning>
+
+```go
+ascii := "hello"
+fmt.Println(len(ascii))  // 5 bytes, 5 characters
+
+unicode := "hello 世界"
+fmt.Println(len(unicode))  // 12 bytes, 8 characters
+```
+
+## Mixing Numbers and Strings
+
+You cannot directly concatenate numbers with strings. You must convert first:
+
+```go
+age := 25
+// message := "I am " + age + " years old"  // ✗ Error
+
+// Use Printf instead
+fmt.Printf("I am %d years old\n", age)  // ✓ Correct
+
+// Or use Sprintf to build a string
+message := fmt.Sprintf("I am %d years old", age)
+fmt.Println(message)  // ✓ Correct
+```
+
+## Practical Examples
+
+### Simple Calculator
+
+```go
+a, b := 10, 3
+
+fmt.Printf("%d + %d = %d\n", a, b, a+b)    // 10 + 3 = 13
+fmt.Printf("%d - %d = %d\n", a, b, a-b)    // 10 - 3 = 7
+fmt.Printf("%d * %d = %d\n", a, b, a*b)    // 10 * 3 = 30
+fmt.Printf("%d / %d = %d\n", a, b, a/b)    // 10 / 3 = 3
+fmt.Printf("%d %% %d = %d\n", a, b, a%b)   // 10 % 3 = 1
+```
+
+### Temperature Conversion
+
+```go
+celsius := 25.0
+fahrenheit := celsius * 9.0 / 5.0 + 32.0
+
+fmt.Printf("%.1f°C is %.1f°F\n", celsius, fahrenheit)
+// Output: 25.0°C is 77.0°F
+```
+
+### Building Messages
+
+```go
+firstName := "John"
+lastName := "Doe"
+age := 30
+
+fullName := firstName + " " + lastName
+greeting := "Hello, " + fullName + "!"
+
+fmt.Println(greeting)
+fmt.Printf("%s is %d years old.\n", fullName, age)
+
+// Output:
+// Hello, John Doe!
+// John Doe is 30 years old.
+```
+
+### String Formatting
+
+```go
+product := "Widget"
+price := 29.99
+quantity := 3
+total := price * float64(quantity)
+
+// Build an invoice line
+line := fmt.Sprintf("%-15s $%6.2f x %d = $%7.2f", 
+    product, price, quantity, total)
+fmt.Println(line)
+// Output: Widget          $ 29.99 x 3 = $  89.97
+```
+
+## Best Practices
+
+### Numbers
+
+1. **Use appropriate types** - Choose `int` for whole numbers, `float64` for decimals
+2. **Watch for integer division** - `5 / 2` equals `2`, not `2.5`
+3. **Use parentheses for clarity** - Makes complex expressions easier to understand
+4. **Prefer `++` and `--`** - More concise than `+= 1` or `-= 1`
+5. **Be careful mixing types** - Explicit conversion is required
+
+### Strings
+
+1. **Use raw strings for paths and multi-line text** - Easier to read and maintain
+2. **Consider `strings.Builder` for many concatenations** - More efficient than repeated `+`
+3. **Use `fmt.Sprintf` to mix strings and numbers** - Cleaner than manual conversion
+4. **Remember strings are immutable** - Each concatenation creates a new string
+5. **Check length carefully with Unicode** - `len()` counts bytes, not characters
+
+<Tip>
+For string-heavy operations, explore the `strings` package which provides many useful functions like `Split`, `Join`, `Contains`, `Replace`, and more.
+</Tip>
+
+## Common Patterns
+
+### Calculating percentages
+
+```go
+correct := 47
+total := 50
+percentage := float64(correct) / float64(total) * 100
+
+fmt.Printf("Score: %d/%d (%.1f%%)\n", correct, total, percentage)
+// Output: Score: 47/50 (94.0%)
+```
+
+### Building formatted strings
+
+```go
+lines := []string{
+    "Name: " + name,
+    "Age: " + fmt.Sprintf("%d", age),
+    "Email: " + email,
+}
+
+result := strings.Join(lines, "\n")
+```
+
+### Working with paths
+
+```go
+// Use raw strings for file paths
+windowsPath := `C:\Users\John\Documents\file.txt`
+unixPath := `/home/john/documents/file.txt`
+
+// Or use filepath.Join for cross-platform code
+import "path/filepath"
+path := filepath.Join("home", "john", "documents", "file.txt")
+```
+
+<Note>
+Understanding how to work with numbers and strings effectively is fundamental to Go programming. These are the building blocks you'll use constantly, so practice using them in different combinations and contexts.
+</Note>

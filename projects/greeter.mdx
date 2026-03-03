@@ -1,0 +1,185 @@
+---
+title: Greeter Project
+description: Build a command-line greeter that accepts arguments and uses variables
+icon: hand-wave
+---
+
+Create a simple program that greets users by name using command-line arguments and variables.
+
+## What You'll Build
+
+A command-line program that:
+- Accepts a name as a command-line argument
+- Greets the user with their name
+- Demonstrates variable declaration and assignment
+- Uses both regular and short variable declarations
+
+## What You'll Learn
+
+- Working with `os.Args` to read command-line arguments
+- Declaring and assigning variables
+- Using short variable declaration (`:=`)
+- Multiple variable assignments
+- Basic string formatting with `fmt.Println`
+
+## Project Versions
+
+### Version 1: Using var Declaration
+
+In this version, you'll declare a variable first, then assign a value to it:
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	var name string
+
+	// assign a new value to the string variable
+	name = os.Args[1]
+	fmt.Println("Hello great", name, "!")
+
+	// changes the name, declares the age with 85
+	name, age := "gandalf", 85
+
+	fmt.Println("My name is", name)
+	fmt.Println("My age is", age)
+	fmt.Println("BTW, you shall pass!")
+}
+```
+
+### Version 2: Using Short Declaration
+
+Simplify the code using short variable declaration:
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// assign a new value using short declaration
+	name := os.Args[1]
+	fmt.Println("Hello great", name, "!")
+
+	// changes the name, declares the age with 85
+	name, age := "gandalf", 85
+
+	fmt.Println("My name is", name)
+	fmt.Println("My age is", age)
+	fmt.Println("BTW, you shall pass!")
+}
+```
+
+## Running the Program
+
+```bash
+# Compile and run with an argument
+go run main.go Alice
+```
+
+**Output:**
+```
+Hello great Alice !
+My name is gandalf
+My age is 85
+BTW, you shall pass!
+```
+
+## Understanding os.Args
+
+The `os.Args` variable is a slice of strings that contains:
+- `os.Args[0]` - Path to the running program
+- `os.Args[1]` - First command-line argument
+- `os.Args[2]` - Second command-line argument
+- And so on...
+
+<CodeGroup>
+```go Accessing Arguments
+// Print all arguments
+fmt.Printf("%#v\n", os.Args)
+
+// Get the first argument
+fmt.Println("1st argument:", os.Args[1])
+
+// Get the number of arguments
+fmt.Println("Items inside os.Args:", len(os.Args))
+```
+
+```go Example Output
+[]string{"/tmp/go-build123/exe/main", "Alice"}
+1st argument: Alice
+Items inside os.Args: 2
+```
+</CodeGroup>
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="Variable Declaration vs Assignment">
+    ```go
+    // Declaration: Creates a variable
+    var name string
+    
+    // Assignment: Gives it a value
+    name = "Alice"
+    
+    // Short declaration: Does both at once
+    name := "Alice"
+    ```
+  </Accordion>
+  
+  <Accordion title="Multiple Variable Assignment">
+    ```go
+    // Assign multiple variables at once
+    name, age := "gandalf", 85
+    
+    // At least one variable must be new when using :=
+    // Here, 'age' is new, so we can redeclare 'name'
+    ```
+  </Accordion>
+  
+  <Accordion title="Slice Indexing">
+    ```go
+    // Slices are zero-indexed
+    slice := []string{"first", "second", "third"}
+    
+    slice[0] // "first"
+    slice[1] // "second"
+    slice[2] // "third"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+This simple version doesn't check if an argument was provided. If you run it without arguments, it will crash! You'll learn how to handle this with error checking later.
+</Warning>
+
+## Practice Exercises
+
+Try these exercises to reinforce your learning:
+
+1. **Count Arguments** - Print how many arguments were passed
+2. **Print the Path** - Display the program's path (os.Args[0])
+3. **Greet More People** - Accept multiple names and greet each one
+4. **Add Age** - Accept both name and age as arguments
+5. **Format Output** - Use `fmt.Printf` for better formatting
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Lucky Number Game" icon="clover" href="/projects/lucky-number-game">
+    Learn about loops and randomization
+  </Card>
+  
+  <Card title="Variables Guide" icon="code" href="/fundamentals/variables">
+    Deep dive into variable declarations
+  </Card>
+</CardGroup>

@@ -1,0 +1,521 @@
+---
+title: 'Higher-Order Functions'
+description: 'Learn how to write and use higher-order functions - functions that accept or return other functions in Go'
+---
+
+## Introduction
+
+A **higher-order function** is a function that does at least one of the following:
+- Takes one or more functions as arguments
+- Returns a function as its result
+
+Higher-order functions are powerful tools for creating reusable, composable code. They enable functional programming patterns and help you write more abstract, flexible APIs.
+
+## Functions as First-Class Citizens
+
+In Go, functions are first-class citizens, meaning they can be:
+- Assigned to variables
+- Passed as arguments
+- Returned from other functions
+- Stored in data structures
+
+```go
+type filterFunc func(int) bool
+
+// Assign a function to a variable
+var isEven filterFunc = func(n int) bool {
+    return n%2 == 0
+}
+
+// Use it like any other value
+result := isEven(4) // true
+```
+
+## Functions as Arguments
+
+The most common use of higher-order functions is accepting functions as parameters:
+
+```go
+type filterFunc func(int) bool
+
+func filter(f filterFunc, nums ...int) (filtered []int) {
+    for _, n := range nums {
+        if f(n) {
+            filtered = append(filtered, n)
+        }
+    }
+    return
+}
+
+// Usage with different filter functions
+nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+evens := filter(isEven, nums...)
+odds := filter(isOdd, nums...)
+```
+
+<Tip>
+Define function types using `type` declarations to make your code more readable and type-safe. Instead of `func filter(f func(int) bool, ...)`, use `func filter(f filterFunc, ...)`.
+</Tip>
+
+## Functions as Return Values
+
+Higher-order functions can return functions, enabling powerful patterns like function factories:
+
+```go
+func greater(min int) filterFunc {
+    return func(n int) bool {
+        return n > min
+    }
+}
+
+func lesseq(max int) filterFunc {
+    return func(n int) bool {
+        return n <= max
+    }
+}
+
+// Usage
+nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+greaterThan3 := greater(3)
+lessThanOrEqual6 := lesseq(6)
+
+fmt.Printf("> 3        : %d\n", filter(greaterThan3, nums...))
+// Output: [4 5 6 7 8 9 10]
+
+fmt.Printf("<= 6       : %d\n", filter(lessThanOrEqual6, nums...))
+// Output: [1 2 3 4 5 6]
+```
+
+### Why Return Functions?
+
+Returning functions allows you to:
+
+1. **Create specialized functions** from general ones
+2. **Encapsulate configuration** in the returned function
+3. **Build function pipelines** by chaining function generators
+
+```go
+// Instead of writing separate functions for each threshold
+func greaterThan3(n int) bool { return n > 3 }
+func greaterThan6(n int) bool { return n > 6 }
+
+// Write one factory function
+func greater(min int) filterFunc {
+    return func(n int) bool {
+        return n > min
+    }
+}
+
+// Create as many as you need
+gt3 := greater(3)
+gt6 := greater(6)
+gt100 := greater(100)
+```
+
+## Function Transformers
+
+Higher-order functions can transform other functions:
+
+```go
+func reverse(f filterFunc) filterFunc {
+    return func(n int) bool {
+        return !f(n)
+    }
+}
+
+func isEven(n int) bool {
+    return n%2 == 0
+}
+
+// Create the opposite function
+isOdd := reverse(isEven)
+
+fmt.Printf("reversed   : %t\n", isOdd(8))  // false
+fmt.Printf("reversed   : %t\n", isOdd(7))  // true
+```
+
+### Composing Transformations
+
+You can chain function transformations:
+
+```go
+nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+// greater(6) returns: n > 6
+// reverse(greater(6)) returns: !(n > 6) which is n <= 6
+notGreaterThan6 := reverse(greater(6))
+
+fmt.Printf("<= 6       : %d\n", filter(notGreaterThan6, nums...))
+// Output: [1 2 3 4 5 6]
+```
+
+<Note>
+Double reversal brings you back to the original function:
+```go
+odd := reverse(reverse(isEven))
+fmt.Printf("double reversed: %t\n", odd(8)) // false (same as isEven)
+```
+</Note>
+
+## Practical Examples
+
+### 1. Map Function
+
+Transform each element in a slice:
+
+```go
+func mapInts(f func(int) int, nums ...int) []int {
+    result := make([]int, len(nums))
+    for i, n := range nums {
+        result[i] = f(n)
+    }
+    return result
+}
+
+// Usage
+nums := []int{1, 2, 3, 4, 5}
+
+doubled := mapInts(func(n int) int { return n * 2 }, nums...)
+squared := mapInts(func(n int) int { return n * n }, nums...)
+
+fmt.Println(doubled) // [2 4 6 8 10]
+fmt.Println(squared) // [1 4 9 16 25]
+```
+
+### 2. Reduce/Fold Function
+
+Combine all elements into a single value:
+
+```go
+func reduce(f func(acc, n int) int, initial int, nums ...int) int {
+    result := initial
+    for _, n := range nums {
+        result = f(result, n)
+    }
+    return result
+}
+
+// Usage
+nums := []int{1, 2, 3, 4, 5}
+
+sum := reduce(func(acc, n int) int { return acc + n }, 0, nums...)
+product := reduce(func(acc, n int) int { return acc * n }, 1, nums...)
+
+fmt.Println(sum)     // 15
+fmt.Println(product) // 120
+```
+
+### 3. Predicate Combinators
+
+Combine multiple conditions:
+
+```go
+func and(f1, f2 filterFunc) filterFunc {
+    return func(n int) bool {
+        return f1(n) && f2(n)
+    }
+}
+
+func or(f1, f2 filterFunc) filterFunc {
+    return func(n int) bool {
+        return f1(n) || f2(n)
+    }
+}
+
+// Usage
+isEvenAndGreaterThan5 := and(isEven, greater(5))
+isOddOrLessThan3 := or(isOdd, lesseq(3))
+
+nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+fmt.Println(filter(isEvenAndGreaterThan5, nums...)) // [6 8 10]
+fmt.Println(filter(isOddOrLessThan3, nums...))      // [1 2 3 5 7 9]
+```
+
+### 4. Retry Logic
+
+Wrap a function with retry behavior:
+
+```go
+type Operation func() error
+
+func withRetry(maxAttempts int, op Operation) Operation {
+    return func() error {
+        var err error
+        for i := 0; i < maxAttempts; i++ {
+            err = op()
+            if err == nil {
+                return nil
+            }
+            fmt.Printf("Attempt %d failed: %v\n", i+1, err)
+            time.Sleep(time.Second * time.Duration(i+1))
+        }
+        return fmt.Errorf("failed after %d attempts: %w", maxAttempts, err)
+    }
+}
+
+// Usage
+fetchData := func() error {
+    // Simulated API call
+    if rand.Float64() < 0.7 {
+        return errors.New("connection timeout")
+    }
+    return nil
+}
+
+reliableFetch := withRetry(3, fetchData)
+err := reliableFetch()
+```
+
+### 5. Timing and Logging Wrapper
+
+Add observability to any function:
+
+```go
+func timeIt(name string, f func()) func() {
+    return func() {
+        start := time.Now()
+        fmt.Printf("%s starts...\n", name)
+        f()
+        fmt.Printf("%s took %v\n", name, time.Since(start))
+    }
+}
+
+// Usage
+processData := func() {
+    time.Sleep(2 * time.Second)
+    // Do actual work...
+}
+
+timedProcess := timeIt("processData", processData)
+timedProcess()
+// Output:
+// processData starts...
+// processData took 2.001s
+```
+
+## Real-World Example: Complete Filter System
+
+Here's a comprehensive example combining multiple higher-order function concepts:
+
+```go
+package main
+
+import "fmt"
+
+type filterFunc func(int) bool
+
+func main() {
+    fmt.Println("••• HIGHER-ORDER FUNCS •••")
+    
+    nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    
+    // Function factory
+    fmt.Printf("> 3        : %d\n", filter(greater(3), nums...))
+    fmt.Printf("> 6        : %d\n", filter(greater(6), nums...))
+    
+    // Function transformer
+    fmt.Printf("<= 6       : %d\n", filter(lesseq(6), nums...))
+    fmt.Printf("<= 6       : %d\n", filter(reverse(greater(6)), nums...))
+    
+    // Double transformation
+    odd := reverse(reverse(isEven))
+    fmt.Printf("reversed   : %t\n", odd(8))
+}
+
+// Higher-order function: takes a function, returns filtered slice
+func filter(f filterFunc, nums ...int) (filtered []int) {
+    for _, n := range nums {
+        if f(n) {
+            filtered = append(filtered, n)
+        }
+    }
+    return
+}
+
+// Higher-order function: returns a function
+func greater(min int) filterFunc {
+    return func(n int) bool {
+        return n > min
+    }
+}
+
+func lesseq(max int) filterFunc {
+    return func(n int) bool {
+        return n <= max
+    }
+}
+
+// Higher-order function: transforms a function
+func reverse(f filterFunc) filterFunc {
+    return func(n int) bool {
+        return !f(n)
+    }
+}
+
+func isEven(n int) bool { return n%2 == 0 }
+func isOdd(m int) bool  { return m%2 == 1 }
+```
+
+## Design Patterns
+
+### Builder Pattern
+
+```go
+type Query struct {
+    table      string
+    conditions []string
+}
+
+type QueryBuilder func(*Query)
+
+func Table(name string) QueryBuilder {
+    return func(q *Query) {
+        q.table = name
+    }
+}
+
+func Where(condition string) QueryBuilder {
+    return func(q *Query) {
+        q.conditions = append(q.conditions, condition)
+    }
+}
+
+func BuildQuery(builders ...QueryBuilder) *Query {
+    q := &Query{}
+    for _, builder := range builders {
+        builder(q)
+    }
+    return q
+}
+
+// Usage
+query := BuildQuery(
+    Table("users"),
+    Where("age > 18"),
+    Where("country = 'USA'"),
+)
+```
+
+### Middleware Pattern
+
+```go
+type Handler func(string) string
+
+func Middleware(h Handler) Handler {
+    return func(input string) string {
+        // Before
+        fmt.Println("Before:", input)
+        
+        result := h(input)
+        
+        // After
+        fmt.Println("After:", result)
+        return result
+    }
+}
+
+func chain(h Handler, middlewares ...func(Handler) Handler) Handler {
+    for _, m := range middlewares {
+        h = m(h)
+    }
+    return h
+}
+```
+
+## Benefits of Higher-Order Functions
+
+<CardGroup cols={2}>
+  <Card title="Code Reusability" icon="recycle">
+    Write generic algorithms once and customize behavior with functions
+  </Card>
+  
+  <Card title="Abstraction" icon="cube">
+    Hide implementation details behind function interfaces
+  </Card>
+  
+  <Card title="Composition" icon="layer-group">
+    Build complex behavior by combining simple functions
+  </Card>
+  
+  <Card title="Flexibility" icon="arrows-split-up-and-left">
+    Change behavior without modifying core logic
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Define Function Types">
+    Use `type` to define function signatures for clarity:
+    ```go
+    type filterFunc func(int) bool
+    type transformFunc func(int) int
+    ```
+  </Step>
+  
+  <Step title="Keep Functions Pure">
+    When possible, write pure functions that don't modify external state
+  </Step>
+  
+  <Step title="Document Behavior">
+    Clearly document what the higher-order function does with the function parameter
+  </Step>
+  
+  <Step title="Consider Performance">
+    Function calls have overhead. Profile before optimizing, but be aware of performance implications
+  </Step>
+</Steps>
+
+## Common Pitfalls
+
+### 1. Over-Abstraction
+
+Don't use higher-order functions when simple code is clearer:
+
+```go
+// Overcomplicated
+result := filter(greater(5), nums...)
+
+// Sometimes simpler is better
+var result []int
+for _, n := range nums {
+    if n > 5 {
+        result = append(result, n)
+    }
+}
+```
+
+### 2. Type Safety
+
+Go's type system doesn't support generic higher-order functions (before Go 1.18), so you might need type-specific versions:
+
+```go
+// Need separate implementations for different types
+func filterInts(f func(int) bool, nums ...int) []int { ... }
+func filterStrings(f func(string) bool, strs ...string) []string { ... }
+
+// Or use interface{} with type assertions (pre-generics)
+// Or use generics in Go 1.18+ for true type safety
+```
+
+## Comparison with Other Patterns
+
+| Pattern | When to Use | Example |
+|---------|-------------|---------|
+| Higher-Order Functions | When behavior needs to be customizable | `filter`, `map`, `reduce` |
+| Interfaces | When multiple types need the same behavior | `io.Reader`, `sort.Interface` |
+| Closures | When functions need to capture state | Event handlers, iterators |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Closures" icon="lock" href="/functions/closures">
+    Learn more about functions that capture variables from their environment
+  </Card>
+  
+  <Card title="Deferred Functions" icon="clock" href="/functions/deferred">
+    Master the defer keyword for cleanup and resource management
+  </Card>
+</CardGroup>

@@ -1,0 +1,764 @@
+---
+title: 'Error Handling'
+description: 'Master Go error handling with errors, panic, recover, and defer for robust applications'
+---
+
+## Error Handling in Go
+
+Go takes a unique approach to error handling. Instead of exceptions, Go uses explicit error values that must be checked. This makes error handling visible and forces you to think about what happens when things go wrong.
+
+The Go philosophy:
+- **Errors are values** - they're returned like any other value
+- **Handle errors explicitly** - no hidden control flow
+- **Panic for truly exceptional cases** - not for normal error handling
+
+## The error Interface
+
+The built-in `error` interface is simple:
+
+```go Error Interface
+type error interface {
+    Error() string
+}
+```
+
+Any type with an `Error() string` method implements the error interface.
+
+## Basic Error Handling
+
+<CodeGroup>
+
+```go Returning Errors
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, fmt.Errorf("cannot divide by zero")
+    }
+    return a / b, nil
+}
+
+func main() {
+    result, err := divide(10, 0)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    fmt.Println("Result:", result)
+}
+```
+
+```go Multiple Return Values
+func readConfig(filename string) (*Config, error) {
+    file, err := os.Open(filename)
+    if err != nil {
+        return nil, fmt.Errorf("failed to open config: %w", err)
+    }
+    defer file.Close()
+    
+    var config Config
+    err = json.NewDecoder(file).Decode(&config)
+    if err != nil {
+        return nil, fmt.Errorf("failed to parse config: %w", err)
+    }
+    
+    return &config, nil
+}
+```
+
+</CodeGroup>
+
+<Info>
+The convention is to return errors as the last return value. A nil error indicates success.
+</Info>
+
+## Creating Errors
+
+There are several ways to create errors:
+
+<Tabs>
+  <Tab title="errors.New">
+    ```go Simple Errors
+    import "errors"
+    
+    var ErrNotFound = errors.New("item not found")
+    var ErrInvalidInput = errors.New("invalid input")
+    
+    func getUser(id int) (*User, error) {
+        if id < 0 {
+            return nil, ErrInvalidInput
+        }
+        // ...
+        return nil, ErrNotFound
+    }
+    ```
+  </Tab>
+  
+  <Tab title="fmt.Errorf">
+    ```go Formatted Errors
+    import "fmt"
+    
+    func processFile(name string, size int) error {
+        if size > maxSize {
+            return fmt.Errorf("file %s too large: %d bytes", name, size)
+        }
+        return nil
+    }
+    
+    // Wrapping errors (Go 1.13+)
+    func readData(filename string) error {
+        data, err := os.ReadFile(filename)
+        if err != nil {
+            return fmt.Errorf("failed to read %s: %w", filename, err)
+        }
+        // ...
+        return nil
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Custom Errors">
+    ```go Custom Error Types
+    type ValidationError struct {
+        Field string
+        Value interface{}
+        Msg   string
+    }
+    
+    func (e *ValidationError) Error() string {
+        return fmt.Sprintf("%s: %v - %s", e.Field, e.Value, e.Msg)
+    }
+    
+    func validateAge(age int) error {
+        if age < 0 {
+            return &ValidationError{
+                Field: "age",
+                Value: age,
+                Msg:   "must be positive",
+            }
+        }
+        return nil
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Error Wrapping and Unwrapping
+
+Go 1.13+ introduced error wrapping to preserve error chains:
+
+```go Error Wrapping
+func readConfig(filename string) error {
+    data, err := os.ReadFile(filename)
+    if err != nil {
+        // %w wraps the error, preserving it for inspection
+        return fmt.Errorf("config error: %w", err)
+    }
+    
+    err = parseConfig(data)
+    if err != nil {
+        return fmt.Errorf("parse error: %w", err)
+    }
+    
+    return nil
+}
+
+func main() {
+    err := readConfig("config.json")
+    if err != nil {
+        // Check for specific wrapped error
+        if errors.Is(err, os.ErrNotExist) {
+            fmt.Println("Config file doesn't exist")
+            return
+        }
+        
+        // Extract specific error type
+        var pathErr *os.PathError
+        if errors.As(err, &pathErr) {
+            fmt.Println("Path error:", pathErr.Path)
+            return
+        }
+        
+        fmt.Println("Error:", err)
+    }
+}
+```
+
+<Note>
+- Use `%w` in `fmt.Errorf` to wrap errors
+- Use `errors.Is` to check if an error is or wraps a specific error
+- Use `errors.As` to check if an error is or wraps a specific type
+</Note>
+
+## Defer Statement
+
+The `defer` keyword schedules a function call to run after the surrounding function returns. Deferred calls run in LIFO (Last In, First Out) order.
+
+### Basic Defer Usage
+
+```go Defer Basics
+func processFile(filename string) error {
+    file, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer file.Close() // Ensures file is closed on return
+    
+    // Work with file
+    data := make([]byte, 1024)
+    _, err = file.Read(data)
+    if err != nil {
+        return err // file.Close() still runs!
+    }
+    
+    return nil // file.Close() runs here
+}
+```
+
+### Defer Stack
+
+```go Defer Order
+func stacked() {
+    for count := 1; count <= 5; count++ {
+        defer fmt.Println(count)
+    }
+    
+    fmt.Println("the stacked func returns")
+}
+
+// Output:
+// the stacked func returns
+// 5
+// 4
+// 3
+// 2
+// 1
+```
+
+### Defer for Resource Cleanup
+
+<CodeGroup>
+
+```go File Cleanup
+func copyFile(src, dst string) error {
+    source, err := os.Open(src)
+    if err != nil {
+        return err
+    }
+    defer source.Close()
+    
+    destination, err := os.Create(dst)
+    if err != nil {
+        return err
+    }
+    defer destination.Close()
+    
+    _, err = io.Copy(destination, source)
+    return err
+}
+```
+
+```go Mutex Unlocking
+func (c *Cache) Get(key string) (interface{}, bool) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    
+    value, ok := c.data[key]
+    return value, ok
+}
+```
+
+```go Timing Functions
+func measure(name string) func() {
+    start := time.Now()
+    fmt.Printf("%s starts...\n", name)
+    
+    return func() {
+        fmt.Printf("%s took %v\n", name, time.Since(start))
+    }
+}
+
+func findTheMeaning() {
+    defer measure("findTheMeaning")()
+    
+    // Do some heavy calculation
+    time.Sleep(time.Second * 2)
+}
+```
+
+</CodeGroup>
+
+<Warning>
+**Defer Gotcha:** Arguments to deferred calls are evaluated immediately, not when the deferred function runs.
+
+```go
+func single() {
+    var count int
+    defer fmt.Println(count) // Prints 0 (current value)
+    
+    count++
+    // When defer runs, it prints 0, not 1
+}
+```
+</Warning>
+
+## Panic and Recover
+
+`panic` and `recover` are Go's mechanisms for handling truly exceptional situations - things that shouldn't happen in normal program flow.
+
+### When to Panic
+
+Use panic for:
+- Programming errors (nil pointer, out of bounds)
+- Unrecoverable situations (can't initialize critical resources)
+- Violations of invariants
+
+**Don't use panic for:**
+- Normal error handling
+- Validation errors
+- Expected failures
+
+### Panic Example
+
+```go Using Panic
+func headerOf(format string) string {
+    switch format {
+    case "png":
+        return "\x89PNG\r\n\x1a\n"
+    case "jpg":
+        return "\xff\xd8\xff"
+    }
+    // This should never occur - programming error
+    panic("unknown format: " + format)
+}
+```
+
+### Recover from Panic
+
+`recover` can catch a panic, but only when called inside a deferred function:
+
+```go Recovering from Panic
+func main() {
+    defer func() {
+        if rerr := recover(); rerr != nil {
+            fmt.Println("Recovered from panic:", rerr)
+        }
+    }()
+    
+    fmt.Println("Starting...")
+    panic("something went wrong!")
+    fmt.Println("This never prints")
+}
+
+// Output:
+// Starting...
+// Recovered from panic: something went wrong!
+```
+
+## Real-World Example: Image Detector
+
+Here's a complete example showing error handling, defer, panic, and recover:
+
+<CodeGroup>
+
+```go Without Recover
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "os"
+)
+
+func main() {
+    files := []string{
+        "pngs/cups-jpg.png",
+        "pngs/forest-jpg.png",
+        "pngs/golden.png",
+        "pngs/work.png",
+        "pngs/shakespeare-text.png",
+        "pngs/empty.png",
+    }
+    
+    list("png", files)
+}
+
+func list(format string, files []string) {
+    valids := detect(format, files)
+    
+    fmt.Printf("Correct Files:\n")
+    for _, valid := range valids {
+        fmt.Printf(" + %s\n", valid)
+    }
+}
+
+func detect(format string, filenames []string) (valids []string) {
+    header := headerOf(format)
+    buf := make([]byte, len(header))
+    
+    for _, filename := range filenames {
+        if read(filename, buf) != nil {
+            continue
+        }
+        
+        if bytes.Equal([]byte(header), buf) {
+            valids = append(valids, filename)
+        }
+    }
+    return
+}
+
+func headerOf(format string) string {
+    switch format {
+    case "png":
+        return "\x89PNG\r\n\x1a\n"
+    case "jpg":
+        return "\xff\xd8\xff"
+    }
+    panic("unknown format: " + format)
+}
+
+func read(filename string, buf []byte) error {
+    file, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+    
+    fi, err := file.Stat()
+    if err != nil {
+        return err
+    }
+    
+    if fi.Size() <= int64(len(buf)) {
+        return fmt.Errorf("file size < len(buf)")
+    }
+    
+    _, err = io.ReadFull(file, buf)
+    return err
+}
+```
+
+```go With Recover
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "os"
+)
+
+func main() {
+    // Recover from panics
+    defer func() {
+        if rerr := recover(); rerr != nil {
+            fmt.Println("Panicked:", rerr)
+        }
+    }()
+    
+    args := os.Args[1:]
+    if len(args) != 1 {
+        fmt.Println("png or jpg?")
+        return
+    }
+    
+    files := []string{
+        "pngs/cups-jpg.png",
+        "pngs/forest-jpg.png",
+        "pngs/golden.png",
+        "pngs/work.png",
+        "pngs/shakespeare-text.png",
+        "pngs/empty.png",
+    }
+    
+    list(args[0], files)
+}
+
+func list(format string, files []string) {
+    valids := detect(format, files)
+    
+    fmt.Printf("Correct Files:\n")
+    for _, valid := range valids {
+        fmt.Printf(" + %s\n", valid)
+    }
+}
+
+func detect(format string, filenames []string) (pngs []string) {
+    header := headerOf(format)
+    buf := make([]byte, len(header))
+    
+    for _, filename := range filenames {
+        if read(filename, buf) != nil {
+            continue
+        }
+        
+        if bytes.Equal([]byte(header), buf) {
+            pngs = append(pngs, filename)
+        }
+    }
+    return
+}
+
+func headerOf(format string) string {
+    switch format {
+    case "png":
+        return "\x89PNG\r\n\x1a\n"
+    case "jpg":
+        return "\xff\xd8\xff"
+    }
+    // This should never occur
+    panic("unknown format: " + format)
+}
+
+func read(filename string, buf []byte) error {
+    file, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+    
+    fi, err := file.Stat()
+    if err != nil {
+        return err
+    }
+    
+    if fi.Size() <= int64(len(buf)) {
+        return fmt.Errorf("file size < len(buf)")
+    }
+    
+    _, err = io.ReadFull(file, buf)
+    return err
+}
+```
+
+</CodeGroup>
+
+## Error Handling Patterns
+
+<AccordionGroup>
+
+<Accordion title="Early Return">
+Handle errors immediately and return early:
+
+```go Early Return Pattern
+func processUser(id int) error {
+    user, err := getUser(id)
+    if err != nil {
+        return fmt.Errorf("failed to get user: %w", err)
+    }
+    
+    err = validateUser(user)
+    if err != nil {
+        return fmt.Errorf("validation failed: %w", err)
+    }
+    
+    err = saveUser(user)
+    if err != nil {
+        return fmt.Errorf("failed to save: %w", err)
+    }
+    
+    return nil
+}
+```
+
+This keeps the happy path on the left and errors handled immediately.
+</Accordion>
+
+<Accordion title="Error Aggregation">
+Collect multiple errors:
+
+```go Multiple Errors
+func validateForm(form *Form) error {
+    var errs []error
+    
+    if form.Name == "" {
+        errs = append(errs, errors.New("name is required"))
+    }
+    
+    if form.Email == "" {
+        errs = append(errs, errors.New("email is required"))
+    }
+    
+    if form.Age < 0 {
+        errs = append(errs, errors.New("age must be positive"))
+    }
+    
+    if len(errs) > 0 {
+        return errors.Join(errs...) // Go 1.20+
+    }
+    
+    return nil
+}
+```
+</Accordion>
+
+<Accordion title="Sentinel Errors">
+Define package-level error variables for common errors:
+
+```go Sentinel Errors
+package db
+
+import "errors"
+
+var (
+    ErrNotFound    = errors.New("record not found")
+    ErrDuplicate   = errors.New("duplicate record")
+    ErrInvalidID   = errors.New("invalid ID")
+)
+
+func GetUser(id int) (*User, error) {
+    if id < 0 {
+        return nil, ErrInvalidID
+    }
+    // ...
+    return nil, ErrNotFound
+}
+
+// Usage
+user, err := db.GetUser(id)
+if errors.Is(err, db.ErrNotFound) {
+    // Handle not found
+}
+```
+</Accordion>
+
+</AccordionGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Always Check Errors">
+    Never ignore returned errors. If you truly want to ignore an error, be explicit:
+    
+    ```go
+    _ = file.Close() // Explicitly ignoring error
+    ```
+  </Step>
+  
+  <Step title="Add Context to Errors">
+    Wrap errors with context about what operation failed:
+    
+    ```go
+    return fmt.Errorf("failed to process user %d: %w", userID, err)
+    ```
+  </Step>
+  
+  <Step title="Don't Panic">
+    Use panic only for truly exceptional situations. Prefer returning errors.
+  </Step>
+  
+  <Step title="Use Defer for Cleanup">
+    Always use defer for cleanup operations like closing files, unlocking mutexes, etc.
+  </Step>
+  
+  <Step title="Create Custom Error Types">
+    For complex errors, create custom types with additional context:
+    
+    ```go
+    type APIError struct {
+        StatusCode int
+        Message    string
+        Endpoint   string
+    }
+    
+    func (e *APIError) Error() string {
+        return fmt.Sprintf("%s: %d - %s", e.Endpoint, e.StatusCode, e.Message)
+    }
+    ```
+  </Step>
+</Steps>
+
+## Common Mistakes
+
+<Warning>
+**Shadowing err Variable**
+
+```go Bad
+if err := doSomething(); err != nil {
+    // ...
+}
+if err := doSomethingElse(); err != nil {
+    // This shadows the previous err!
+}
+```
+
+**Good**
+
+```go Good
+var err error
+
+err = doSomething()
+if err != nil {
+    // ...
+}
+
+err = doSomethingElse()
+if err != nil {
+    // ...
+}
+```
+</Warning>
+
+<Warning>
+**Not Checking Defer Errors**
+
+```go Bad
+defer file.Close() // Error ignored
+```
+
+**Good**
+
+```go Good
+defer func() {
+    if err := file.Close(); err != nil {
+        log.Printf("failed to close file: %v", err)
+    }
+}()
+```
+</Warning>
+
+## Testing Error Handling
+
+```go Error Testing
+func TestDivide(t *testing.T) {
+    tests := []struct {
+        name    string
+        a, b    float64
+        want    float64
+        wantErr bool
+    }{
+        {"normal", 10, 2, 5, false},
+        {"divide by zero", 10, 0, 0, true},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got, err := divide(tt.a, tt.b)
+            if (err != nil) != tt.wantErr {
+                t.Errorf("divide() error = %v, wantErr %v", err, tt.wantErr)
+                return
+            }
+            if got != tt.want {
+                t.Errorf("divide() = %v, want %v", got, tt.want)
+            }
+        })
+    }
+}
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Interfaces" icon="plug" href="/advanced/interfaces">
+    The error interface and custom errors
+  </Card>
+  <Card title="Functions" icon="function" href="/functions/basics">
+    Multiple return values for errors
+  </Card>
+  <Card title="Defer, Panic, Recover" icon="shield" href="/functions/deferred">
+    Deep dive into error recovery
+  </Card>
+  <Card title="Testing" icon="flask" href="/reference/best-practices">
+    Testing error conditions
+  </Card>
+</CardGroup>

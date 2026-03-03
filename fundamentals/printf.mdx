@@ -1,0 +1,319 @@
+---
+title: "Printf and Formatting"
+description: "Learn how to format and print output in Go using fmt.Printf"
+---
+
+## Printf vs Println
+
+Go provides different functions for printing output, each suited for different use cases.
+
+### Using Println
+
+`Println` prints values separated by spaces and adds a newline at the end:
+
+```go
+ops, ok, fail := 2350, 543, 433
+
+fmt.Println("total:", ops, "- success:", ok, "/", fail)
+// Output: total: 2350 - success: 543 / 433
+```
+
+This is simple but gives you limited control over formatting.
+
+### Using Printf
+
+`Printf` gives you precise control over output formatting using format specifiers:
+
+```go
+ops, ok, fail := 2350, 543, 433
+
+fmt.Printf("total: %d - success: %d / %d\n", ops, ok, fail)
+// Output: total: 2350 - success: 543 / 433
+```
+
+<Note>
+`Printf` does not add a newline automatically - you need to include `\n` explicitly.
+</Note>
+
+## Format Specifiers
+
+Format specifiers are placeholders that tell `Printf` how to format each value. They start with `%` followed by a character indicating the format type.
+
+### Common Format Specifiers
+
+| Specifier | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `%d` | int | Decimal integer | `fmt.Printf("%d", 42)` → `42` |
+| `%f` | float | Decimal floating point | `fmt.Printf("%f", 3.14)` → `3.140000` |
+| `%s` | string | String | `fmt.Printf("%s", "hello")` → `hello` |
+| `%t` | bool | Boolean | `fmt.Printf("%t", true)` → `true` |
+| `%v` | any | Default format | `fmt.Printf("%v", anything)` |
+| `%T` | any | Type of value | `fmt.Printf("%T", 42)` → `int` |
+| `%q` | string | Quoted string | `fmt.Printf("%q", "hi")` → `"hi"` |
+
+### Printing Types with %T
+
+Use `%T` to discover the type of a variable:
+
+```go
+var (
+    speed int
+    heat  float64
+    off   bool
+    brand string
+)
+
+fmt.Printf("%T\n", speed)  // int
+fmt.Printf("%T\n", heat)   // float64
+fmt.Printf("%T\n", off)    // bool
+fmt.Printf("%T\n", brand)  // string
+```
+
+This is incredibly useful for debugging and learning.
+
+### Using %v for Default Formatting
+
+`%v` prints the value in a default format, working with any type:
+
+```go
+fmt.Printf("%v\n", 42)          // 42
+fmt.Printf("%v\n", 3.14)        // 3.14
+fmt.Printf("%v\n", true)        // true
+fmt.Printf("%v\n", "hello")     // hello
+```
+
+<Tip>
+Use `%v` when you want a simple default representation of any value. Use specific format specifiers when you need precise control.
+</Tip>
+
+## Escape Sequences
+
+Escape sequences let you include special characters in strings.
+
+### Common Escape Sequences
+
+```go
+// Newline
+fmt.Println("hi\nhi")
+// Output:
+// hi
+// hi
+
+// Tab
+fmt.Println("Name:\tJohn")
+// Output: Name:    John
+
+// Backslash
+fmt.Println("C:\\Users\\Documents")
+// Output: C:\Users\Documents
+
+// Double quote
+fmt.Println("She said \"Hello\"")
+// Output: She said "Hello"
+```
+
+### Escape Sequence Reference
+
+| Sequence | Meaning |
+|----------|---------|
+| `\n` | Newline (line break) |
+| `\t` | Tab |
+| `\\` | Backslash |
+| `\"` | Double quote |
+| `\'` | Single quote |
+| `\r` | Carriage return |
+
+<Steps>
+  <Step title="Use escape character">
+    Start with backslash `\`
+  </Step>
+  
+  <Step title="Add the special character">
+    Follow with the character you want to escape
+  </Step>
+  
+  <Step title="Include in your string">
+    The escape sequence is interpreted when the string is printed
+  </Step>
+</Steps>
+
+**Example:**
+
+```go
+fmt.Println("Line 1\nLine 2\nLine 3")
+// Output:
+// Line 1
+// Line 2
+// Line 3
+
+fmt.Println("hi\\n\"hi\"")
+// Output: hi\n"hi"
+```
+
+## Advanced Formatting
+
+### Width and Precision
+
+You can specify width and precision for better formatting:
+
+```go
+// Integers with minimum width
+fmt.Printf("%5d\n", 42)        //    42 (padded to 5 characters)
+
+// Floats with precision
+fmt.Printf("%.2f\n", 3.14159)  // 3.14 (2 decimal places)
+fmt.Printf("%8.2f\n", 3.14159) //     3.14 (width 8, precision 2)
+```
+
+### Padding and Alignment
+
+```go
+// Right-aligned (default)
+fmt.Printf("%5d\n", 42)   //    42
+
+// Left-aligned with -
+fmt.Printf("%-5d\n", 42)  // 42   
+
+// Zero-padding
+fmt.Printf("%05d\n", 42)  // 00042
+```
+
+### String Formatting
+
+```go
+// Minimum width
+fmt.Printf("%10s\n", "hello")    //      hello
+
+// Left-aligned string
+fmt.Printf("%-10s\n", "hello")   // hello     
+
+// Quoted strings
+fmt.Printf("%q\n", "hello")      // "hello"
+```
+
+## Multiple Values
+
+You can format multiple values in one `Printf` call:
+
+```go
+name := "Alice"
+age := 30
+height := 5.7
+
+fmt.Printf("%s is %d years old and %.1f feet tall\n", name, age, height)
+// Output: Alice is 30 years old and 5.7 feet tall
+```
+
+The format specifiers are matched with arguments in order.
+
+<Warning>
+Make sure the number of format specifiers matches the number of arguments. Too few or too many arguments will cause runtime errors.
+</Warning>
+
+## Sprintf - Formatted Strings
+
+`Sprintf` works like `Printf` but returns a string instead of printing:
+
+```go
+name := "Bob"
+age := 25
+
+message := fmt.Sprintf("%s is %d years old", name, age)
+fmt.Println(message)  // Bob is 25 years old
+```
+
+This is useful when you need to build formatted strings for later use.
+
+## Practical Examples
+
+### Printing Table Data
+
+```go
+fmt.Printf("%-10s %5s %8s\n", "Name", "Age", "Salary")
+fmt.Printf("%-10s %5d %8.2f\n", "Alice", 30, 75000.50)
+fmt.Printf("%-10s %5d %8.2f\n", "Bob", 25, 65000.00)
+
+// Output:
+// Name         Age   Salary
+// Alice         30  75000.50
+// Bob           25  65000.00
+```
+
+### Debug Output
+
+```go
+var speed int = 100
+var temp float64 = 98.6
+var active bool = true
+
+fmt.Printf("speed: %v (type: %T)\n", speed, speed)
+fmt.Printf("temp: %v (type: %T)\n", temp, temp)
+fmt.Printf("active: %v (type: %T)\n", active, active)
+
+// Output:
+// speed: 100 (type: int)
+// temp: 98.6 (type: float64)
+// active: true (type: bool)
+```
+
+### Pretty Printing
+
+```go
+fmt.Printf("User Information:\n")
+fmt.Printf("  Name:     %s\n", "John Doe")
+fmt.Printf("  Age:      %d\n", 30)
+fmt.Printf("  Email:    %s\n", "john@example.com")
+fmt.Printf("  Active:   %t\n", true)
+
+// Output:
+// User Information:
+//   Name:     John Doe
+//   Age:      30
+//   Email:    john@example.com
+//   Active:   true
+```
+
+## Best Practices
+
+1. **Use specific format specifiers** - `%d` for integers, `%f` for floats, `%s` for strings
+2. **Include \n when needed** - `Printf` doesn't add newlines automatically
+3. **Use %v for debugging** - it works with any type
+4. **Use %T to check types** - helpful when learning or debugging
+5. **Align output for readability** - use width and padding for tabular data
+
+<Tip>
+When debugging, `%#v` provides Go syntax representation of a value, which can be very helpful for understanding complex data structures.
+</Tip>
+
+## Common Patterns
+
+### Error messages with context
+
+```go
+filename := "data.txt"
+lineNum := 42
+fmt.Printf("Error in %s at line %d\n", filename, lineNum)
+```
+
+### Progress indicators
+
+```go
+current := 75
+total := 100
+fmt.Printf("Progress: %d/%d (%.1f%%)\n", current, total, float64(current)/float64(total)*100)
+// Output: Progress: 75/100 (75.0%)
+```
+
+### Formatted logging
+
+```go
+timestamp := "2024-03-15 10:30:45"
+level := "INFO"
+message := "Server started"
+fmt.Printf("[%s] %s: %s\n", timestamp, level, message)
+// Output: [2024-03-15 10:30:45] INFO: Server started
+```
+
+<Note>
+Mastering `Printf` formatting gives you powerful control over program output. It's essential for creating readable debug output, user-facing messages, and formatted reports.
+</Note>

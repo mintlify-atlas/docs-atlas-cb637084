@@ -1,0 +1,567 @@
+---
+title: "Constants"
+description: "Learn how to declare and use constants in Go, including typed and untyped constants and the iota identifier"
+---
+
+## What are Constants?
+
+Constants are immutable values that cannot be changed after declaration. They're known at compile time and help make code more readable and maintainable.
+
+### The Problem with Magic Numbers
+
+Magic numbers are hard-coded values scattered throughout your code:
+
+```go
+func main() {
+    cm := 100
+    m := cm / 100  // What is 100? Not clear without context
+    fmt.Printf("%dcm is %dm\n", cm, m)
+
+    cm = 200
+    m = cm / 100   // Same magic number repeated
+    fmt.Printf("%dcm is %dm\n", cm, m)
+}
+```
+
+Problems with magic numbers:
+- Unclear meaning
+- Easy to make typos
+- Hard to update if value changes
+- No documentation of intent
+
+### The Solution: Named Constants
+
+```go
+func main() {
+    const meters int = 100
+
+    cm := 100
+    m := cm / meters  // Clear: we're dividing by meters
+    fmt.Printf("%dcm is %dm\n", cm, m)
+
+    cm = 200
+    m = cm / meters   // Same constant, consistent value
+    fmt.Printf("%dcm is %dm\n", cm, m)
+}
+```
+
+Benefits:
+- Self-documenting code
+- Single source of truth
+- Easy to update
+- Prevents accidental changes
+
+<Tip>
+Use constants for values that have meaning and won't change during program execution: configuration values, mathematical constants, status codes, etc.
+</Tip>
+
+## Declaring Constants
+
+### Basic Syntax
+
+```go
+const name type = value
+```
+
+Example:
+
+```go
+const pi float64 = 3.14159
+const maxRetries int = 3
+const appName string = "MyApp"
+const debugMode bool = true
+```
+
+### Type Inference
+
+Like variables, you can omit the type and let Go infer it:
+
+```go
+const pi = 3.14159      // float64
+const maxRetries = 3    // int
+const appName = "MyApp" // string
+const debugMode = true  // bool
+```
+
+## Rules for Constants
+
+### 1. Immutability
+
+Once declared, constants cannot be changed:
+
+```go
+const max = 100
+// max = 200  // ✗ Error: cannot assign to max
+```
+
+### 2. Compile-Time Evaluation
+
+Constants must be known at compile time. You cannot use runtime values or function calls:
+
+```go
+// ✓ OK: literal values and expressions
+const x = 10
+const y = x * 2
+const z = "hello " + "world"
+
+// ✗ Error: function calls not allowed
+// const now = time.Now()
+
+// ✗ Error: runtime variables not allowed
+// var runtime = 10
+// const compile = runtime
+```
+
+### 3. Built-in Functions Allowed
+
+Some built-in functions can be used with constants:
+
+```go
+const (
+    str = "hello"
+    length = len(str)  // ✓ OK: len works with constant strings
+)
+```
+
+Allowed functions: `len`, `cap`, `real`, `imag`, `complex`
+
+<Note>
+Constants are evaluated at compile time, which means they have zero runtime cost. The compiler replaces constant names with their values.
+</Note>
+
+## Constant Types and Expressions
+
+### Numeric Constants
+
+```go
+const (
+    a = 10
+    b = 20
+    c = a + b      // 30
+    d = a * b / 2  // 100
+)
+```
+
+### String Constants
+
+```go
+const (
+    first = "Hello"
+    last = "World"
+    full = first + " " + last  // "Hello World"
+)
+```
+
+### Boolean Constants
+
+```go
+const (
+    enabled = true
+    disabled = false
+    derived = enabled && !disabled  // true
+)
+```
+
+## Multiple Constant Declarations
+
+### Grouped Declaration
+
+```go
+const (
+    pi = 3.14159
+    e  = 2.71828
+    phi = 1.61803
+)
+```
+
+This is cleaner and more organized than separate declarations.
+
+### Multiple Constants Per Line
+
+```go
+const (
+    width, height = 1920, 1080
+    x, y, z = 1, 2, 3
+)
+```
+
+### Repeated Values
+
+When declaring multiple constants, omitting the value repeats the previous expression:
+
+```go
+const (
+    a = 1
+    b     // 1 (same as a)
+    c     // 1 (same as a)
+)
+
+const (
+    x = 10 * 2
+    y          // 20 (same expression as x)
+    z          // 20 (same expression as x)
+)
+```
+
+## Typed vs Untyped Constants
+
+### Untyped Constants
+
+By default, constants are "untyped" - they have a kind but not a specific type:
+
+```go
+const min = 1 + 1      // untyped integer
+const pi = 3.14 * min  // untyped float
+
+fmt.Println(min, pi)
+```
+
+Untyped constants are more flexible and can be used in more contexts.
+
+### Typed Constants
+
+You can explicitly specify a type:
+
+```go
+const typedInt int = 10
+const typedFloat float64 = 3.14
+```
+
+### Flexibility of Untyped Constants
+
+Untyped constants can be used with compatible types:
+
+```go
+const untypedInt = 10
+
+var i int = untypedInt       // ✓ OK
+var i8 int8 = untypedInt     // ✓ OK
+var i64 int64 = untypedInt   // ✓ OK
+var f float64 = untypedInt   // ✓ OK
+```
+
+But typed constants cannot:
+
+```go
+const typedInt int = 10
+
+var i int = typedInt         // ✓ OK
+var i8 int8 = typedInt       // ✗ Error: cannot use int as int8
+var f float64 = typedInt     // ✗ Error: cannot use int as float64
+```
+
+<Tip>
+Use untyped constants by default. Only use typed constants when you specifically need to enforce a type.
+</Tip>
+
+### Default Types
+
+When an untyped constant is used where a type is required, it takes its "default type":
+
+```go
+const x = 10     // untyped integer, default type: int
+const y = 3.14   // untyped float, default type: float64
+const s = "hi"   // untyped string, default type: string
+const b = true   // untyped bool, default type: bool
+
+fmt.Printf("%T\n", x)  // int
+fmt.Printf("%T\n", y)  // float64
+fmt.Printf("%T\n", s)  // string
+fmt.Printf("%T\n", b)  // bool
+```
+
+## The iota Identifier
+
+`iota` is a special identifier used to create sequences of related constants.
+
+### Manual Enumeration (Without iota)
+
+```go
+const (
+    monday = 0
+    tuesday = 1
+    wednesday = 2
+    thursday = 3
+    friday = 4
+    saturday = 5
+    sunday = 6
+)
+```
+
+This works but is verbose and error-prone.
+
+### Using iota
+
+`iota` starts at 0 and increments by 1 for each constant in the group:
+
+```go
+const (
+    monday = iota  // 0
+    tuesday        // 1
+    wednesday      // 2
+    thursday       // 3
+    friday         // 4
+    saturday       // 5
+    sunday         // 6
+)
+
+fmt.Println(monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+// Output: 0 1 2 3 4 5 6
+```
+
+<Steps>
+  <Step title="Start a const block">
+    Use `const ()` for grouped constants
+  </Step>
+  
+  <Step title="Set first constant to iota">
+    The first constant gets value 0
+  </Step>
+  
+  <Step title="Omit values for remaining constants">
+    Each subsequent constant increments iota by 1
+  </Step>
+</Steps>
+
+### iota Expressions
+
+You can use expressions with iota:
+
+```go
+const (
+    _  = iota             // 0 (ignored with blank identifier)
+    KB = 1 << (10 * iota) // 1 << (10 * 1) = 1024
+    MB                    // 1 << (10 * 2) = 1048576
+    GB                    // 1 << (10 * 3) = 1073741824
+)
+
+fmt.Println(KB, MB, GB)
+// Output: 1024 1048576 1073741824
+```
+
+### Skipping Values
+
+Use the blank identifier to skip values:
+
+```go
+const (
+    _     = iota  // 0 (skipped)
+    first         // 1
+    _             // 2 (skipped)
+    third         // 3
+)
+
+fmt.Println(first, third)
+// Output: 1 3
+```
+
+### iota Resets
+
+`iota` resets to 0 in each new const block:
+
+```go
+const (
+    a = iota  // 0
+    b         // 1
+)
+
+const (
+    c = iota  // 0 (reset)
+    d         // 1
+)
+
+fmt.Println(a, b, c, d)
+// Output: 0 1 0 1
+```
+
+<Warning>
+`iota` only works inside const declarations. It cannot be used with variables or outside constant blocks.
+</Warning>
+
+## Practical Examples
+
+### HTTP Status Codes
+
+```go
+const (
+    StatusOK       = 200
+    StatusCreated  = 201
+    StatusAccepted = 202
+
+    StatusBadRequest = 400
+    StatusNotFound   = 404
+    StatusServerError = 500
+)
+```
+
+### Application States
+
+```go
+const (
+    StateIdle = iota
+    StateRunning
+    StatePaused
+    StateStopped
+)
+```
+
+### File Permissions
+
+```go
+const (
+    Read = 1 << iota  // 1 (binary: 001)
+    Write             // 2 (binary: 010)
+    Execute           // 4 (binary: 100)
+)
+
+// Can combine with bitwise OR
+const ReadWrite = Read | Write     // 3 (binary: 011)
+const FullAccess = Read | Write | Execute  // 7 (binary: 111)
+```
+
+### Configuration Values
+
+```go
+const (
+    appName = "MyApp"
+    version = "1.0.0"
+    
+    maxConnections = 100
+    timeout = 30  // seconds
+    retryAttempts = 3
+    
+    debugMode = false
+)
+```
+
+### Mathematical Constants
+
+```go
+const (
+    pi = 3.14159265359
+    e  = 2.71828182846
+    phi = 1.61803398875
+)
+
+func circleArea(radius float64) float64 {
+    return pi * radius * radius
+}
+```
+
+## Best Practices
+
+1. **Use constants for values that don't change** - Configuration, limits, known values
+2. **Prefer untyped constants** - They're more flexible
+3. **Use iota for enumerations** - Cleaner than manual numbering
+4. **Group related constants** - Use const blocks for organization
+5. **Name constants clearly** - Use descriptive names like `maxRetries` not `max`
+6. **Use UPPERCASE for exported constants** - Follow Go naming conventions
+7. **Document non-obvious values** - Add comments explaining what constants represent
+
+```go
+// Good: clear, organized, documented
+const (
+    // DefaultTimeout is the default request timeout in seconds
+    DefaultTimeout = 30
+    
+    // MaxRetries is the maximum number of retry attempts
+    MaxRetries = 3
+    
+    // BufferSize is the default buffer size in bytes
+    BufferSize = 4096
+)
+```
+
+## Common Patterns
+
+### Enumerated Types
+
+```go
+type Status int
+
+const (
+    StatusPending Status = iota
+    StatusProcessing
+    StatusComplete
+    StatusFailed
+)
+
+func (s Status) String() string {
+    switch s {
+    case StatusPending:
+        return "Pending"
+    case StatusProcessing:
+        return "Processing"
+    case StatusComplete:
+        return "Complete"
+    case StatusFailed:
+        return "Failed"
+    default:
+        return "Unknown"
+    }
+}
+```
+
+### Bit Flags
+
+```go
+type Permission uint
+
+const (
+    PermissionNone Permission = 0
+    PermissionRead Permission = 1 << iota
+    PermissionWrite
+    PermissionExecute
+    PermissionAll = PermissionRead | PermissionWrite | PermissionExecute
+)
+
+func (p Permission) Has(perm Permission) bool {
+    return p&perm == perm
+}
+```
+
+### Size Constants
+
+```go
+const (
+    _         = iota // ignore first value
+    KB uint64 = 1 << (10 * iota)
+    MB
+    GB
+    TB
+)
+
+func formatBytes(bytes uint64) string {
+    switch {
+    case bytes >= TB:
+        return fmt.Sprintf("%.2f TB", float64(bytes)/float64(TB))
+    case bytes >= GB:
+        return fmt.Sprintf("%.2f GB", float64(bytes)/float64(GB))
+    case bytes >= MB:
+        return fmt.Sprintf("%.2f MB", float64(bytes)/float64(MB))
+    case bytes >= KB:
+        return fmt.Sprintf("%.2f KB", float64(bytes)/float64(KB))
+    default:
+        return fmt.Sprintf("%d B", bytes)
+    }
+}
+```
+
+<Note>
+Constants are a powerful feature for writing clear, maintainable code. They make your intentions explicit, prevent accidental changes, and have zero runtime cost since they're evaluated at compile time.
+</Note>
+
+## Constants vs Variables
+
+| Feature | Constants | Variables |
+|---------|-----------|-----------|
+| Can change | No | Yes |
+| Evaluation | Compile-time | Runtime |
+| Memory | No runtime memory | Uses memory |
+| Scope | File, package, or block | File, package, or block |
+| Function calls | Only built-ins | Any |
+| Performance | Zero overhead | Normal overhead |
+
+<Tip>
+When deciding between a constant and a variable, ask: "Will this value ever need to change during program execution?" If no, use a constant.
+</Tip>

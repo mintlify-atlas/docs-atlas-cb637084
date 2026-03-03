@@ -1,0 +1,405 @@
+---
+title: Bouncing Ball
+description: Create an animated bouncing ball with 2D arrays and graphics
+icon: baseball
+---
+
+Build an animated bouncing ball that moves around the screen, bouncing off walls using velocity and 2D graphics concepts.
+
+## What You'll Build
+
+An animated program that:
+- Creates a 2D board/screen
+- Draws a ball character (⚾)
+- Animates the ball moving across the screen
+- Makes the ball bounce off the edges
+- Uses velocity to control direction and speed
+
+## What You'll Learn
+
+- Working with 2D slices (slice of slices)
+- Understanding velocity and direction in graphics
+- Creating smooth animations
+- Using buffers for efficient rendering
+- Screen manipulation techniques
+- Basic physics simulation
+
+## Understanding Velocity
+
+**Velocity = Speed + Direction**
+
+In 2D graphics:
+- **X velocity**: Controls horizontal movement
+  - `vx = 1` → ball moves right
+  - `vx = -1` → ball moves left
+- **Y velocity**: Controls vertical movement
+  - `vy = 1` → ball moves down
+  - `vy = -1` → ball moves up
+
+```go
+// On each frame:
+px += vx  // Update x position
+py += vy  // Update y position
+
+// When hitting a wall, reverse direction:
+if px <= 0 || px >= width-1 {
+    vx *= -1  // Reverse horizontal direction
+}
+if py <= 0 || py >= height-1 {
+    vy *= -1  // Reverse vertical direction
+}
+```
+
+## Step-by-Step Approach
+
+<Steps>
+  <Step title="Draw the Board">
+    Create a 2D board and draw static content to understand the rendering.
+    
+    ```go
+    const (
+        width  = 50
+        height = 10
+        cellEmpty = ' '
+        cellBall  = '⚾'
+    )
+
+    // Create 2D board
+    board := make([][]bool, width)
+    for column := range board {
+        board[column] = make([]bool, height)
+    }
+
+    // Draw something (like a smiley)
+    board[12][2] = true  // Eyes
+    board[16][2] = true
+    board[14][4] = true  // Nose
+
+    // Print the board
+    for y := range board[0] {
+        for x := range board {
+            if board[x][y] {
+                fmt.Print(string(cellBall), " ")
+            } else {
+                fmt.Print(string(cellEmpty), " ")
+            }
+        }
+        fmt.Println()
+    }
+    ```
+    
+    **Learn:** How to create and iterate over 2D slices
+  </Step>
+  
+  <Step title="Add a Buffer">
+    Instead of printing directly, use a buffer for efficient rendering.
+    
+    ```go
+    // Create a rune buffer (can store emoji)
+    buf := make([]rune, 0, width*height)
+
+    // Draw into buffer instead of printing directly
+    for y := range board[0] {
+        for x := range board {
+            cell := cellEmpty
+            if board[x][y] {
+                cell = cellBall
+            }
+            buf = append(buf, cell, ' ')
+        }
+        buf = append(buf, '\n')
+    }
+
+    // Print the entire buffer at once
+    fmt.Print(string(buf))
+    ```
+    
+    **Why:** Reduces flicker and improves performance
+  </Step>
+  
+  <Step title="Animate the Ball">
+    Add movement and create the animation loop.
+    
+    ```go
+    import (
+        "time"
+        "github.com/inancgumus/screen"
+    )
+
+    var (
+        px, py int    // ball position
+        vx, vy = 1, 1 // velocities
+    )
+
+    const (
+        maxFrames = 1200
+        speed     = time.Second / 20  // 20 FPS
+    )
+
+    screen.Clear()  // Clear once at start
+
+    for i := 0; i < maxFrames; i++ {
+        // Calculate next position
+        px += vx
+        py += vy
+
+        // Check for wall collisions
+        if px <= 0 || px >= width-1 {
+            vx *= -1  // Reverse X direction
+        }
+        if py <= 0 || py >= height-1 {
+            vy *= -1  // Reverse Y direction
+        }
+
+        // Clear previous ball from board
+        for y := range board[0] {
+            for x := range board {
+                board[x][y] = false
+            }
+        }
+
+        // Place ball at new position
+        board[px][py] = true
+
+        // Reset buffer for new frame
+        buf = buf[:0]
+
+        // Draw to buffer
+        for y := range board[0] {
+            for x := range board {
+                cell := cellEmpty
+                if board[x][y] {
+                    cell = cellBall
+                }
+                buf = append(buf, cell, ' ')
+            }
+            buf = append(buf, '\n')
+        }
+
+        // Display the frame
+        screen.MoveTopLeft()
+        fmt.Print(string(buf))
+
+        // Control animation speed
+        time.Sleep(speed)
+    }
+    ```
+    
+    **Key concepts:** Animation loop, velocity, collision detection
+  </Step>
+</Steps>
+
+## Complete Example
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+	"github.com/inancgumus/screen"
+)
+
+func main() {
+	const (
+		width  = 50
+		height = 10
+		cellEmpty = ' '
+		cellBall  = '⚾'
+		maxFrames = 1200
+		speed     = time.Second / 20
+	)
+
+	var (
+		px, py int    // ball position
+		vx, vy = 1, 1 // velocities
+		cell rune
+	)
+
+	// Create the board
+	board := make([][]bool, width)
+	for column := range board {
+		board[column] = make([]bool, height)
+	}
+
+	// Create drawing buffer
+	buf := make([]rune, 0, width*height)
+
+	screen.Clear()
+
+	for i := 0; i < maxFrames; i++ {
+		// Update position
+		px += vx
+		py += vy
+
+		// Bounce off walls
+		if px <= 0 || px >= width-1 {
+			vx *= -1
+		}
+		if py <= 0 || py >= height-1 {
+			vy *= -1
+		}
+
+		// Clear board
+		for y := range board[0] {
+			for x := range board {
+				board[x][y] = false
+			}
+		}
+
+		// Place ball
+		board[px][py] = true
+
+		// Reset buffer
+		buf = buf[:0]
+
+		// Draw to buffer
+		for y := range board[0] {
+			for x := range board {
+				cell = cellEmpty
+				if board[x][y] {
+					cell = cellBall
+				}
+				buf = append(buf, cell, ' ')
+			}
+			buf = append(buf, '\n')
+		}
+
+		// Display
+		screen.MoveTopLeft()
+		fmt.Print(string(buf))
+
+		time.Sleep(speed)
+	}
+}
+```
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="2D Slices">
+    ```go
+    // Create a 2D slice (slice of slices)
+    board := make([][]bool, width)
+    for i := range board {
+        board[i] = make([]bool, height)
+    }
+    
+    // Access elements: board[x][y]
+    board[5][3] = true  // Set position (5,3)
+    value := board[5][3]  // Read position (5,3)
+    ```
+    
+    Think of it as a grid with X (columns) and Y (rows).
+  </Accordion>
+  
+  <Accordion title="Buffer vs Direct Printing">
+    **Direct printing (slower, flickers):**
+    ```go
+    fmt.Print("a")
+    fmt.Print("b")
+    fmt.Print("c")
+    ```
+    
+    **Using buffer (faster, smooth):**
+    ```go
+    buf := make([]rune, 0, 100)
+    buf = append(buf, 'a', 'b', 'c')
+    fmt.Print(string(buf))  // Print once
+    ```
+  </Accordion>
+  
+  <Accordion title="Buffer Reuse">
+    ```go
+    buf := make([]rune, 0, capacity)
+    
+    for each frame {
+        buf = buf[:0]  // Reset to empty, keep capacity
+        
+        // Fill buffer with new frame data
+        buf = append(buf, data...)
+        
+        // Print buffer
+        fmt.Print(string(buf))
+    }
+    ```
+    
+    This reuses the same buffer, avoiding allocations.
+  </Accordion>
+  
+  <Accordion title="Collision Detection">
+    ```go
+    // Simple boundary collision
+    if px <= 0 {           // Hit left wall
+        vx = 1             // Move right
+    }
+    if px >= width-1 {     // Hit right wall
+        vx = -1            // Move left
+    }
+    
+    // Or toggle direction:
+    if px <= 0 || px >= width-1 {
+        vx *= -1  // Flip direction
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Tips & Challenges
+
+<Tip>
+**Performance Tips:**
+- Use a buffer instead of printing character by character
+- Use `screen.MoveTopLeft()` instead of `screen.Clear()` in loops
+- Pre-allocate slices with proper capacity
+- Use `[][]bool` for the board (memory efficient)
+</Tip>
+
+<Warning>
+**Common Issues:**
+- **Flickering**: Use buffer and `MoveTopLeft()` instead of clearing
+- **Ball disappears**: Check boundary conditions and collision logic
+- **Too fast**: Increase the sleep duration
+- **Too slow**: Decrease the sleep duration or simplify rendering
+</Warning>
+
+## Enhancements to Try
+
+1. **Multiple balls** - Track multiple positions and velocities
+2. **Gravity** - Make vy increase over time going down
+3. **Trail effect** - Leave a fading trail behind the ball
+4. **Different speeds** - Use velocities other than 1 and -1
+5. **Obstacles** - Add walls or barriers to bounce off
+6. **Colors** - Use ANSI color codes for different elements
+
+## Practice Exercises
+
+1. **Find the Bug** - Debug a broken version
+2. **Width and Height** - Make board size configurable via arguments
+3. **Previous Positions** - Draw a trail of previous ball positions
+4. **Single Dimensional** - Implement using a 1D slice instead of 2D
+5. **No Slice** - Draw without using a board slice at all
+
+## Learning Resources
+
+<CardGroup cols={2}>
+  <Card title="2D Graphics Basics" icon="video" href="https://www.youtube.com/watch?v=7Jr0SFMQ4Rs&t=529">
+    Crash Course on 2D graphics concepts
+  </Card>
+  
+  <Card title="Understanding Velocity" icon="video" href="https://www.youtube.com/watch?v=ZM8ECpBuQYE">
+    Learn about velocity in programming
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Retro LED Clock" icon="clock" href="/projects/retro-led-clock">
+    Another animation project
+  </Card>
+  
+  <Card title="Slices Guide" icon="layer-group" href="/data-structures/slices">
+    Master slices and arrays
+  </Card>
+</CardGroup>

@@ -1,0 +1,474 @@
+---
+title: "Control Flow Exercises"
+description: "Practice exercises for if statements, switch statements, and loops in Go"
+---
+
+Master Go's control flow structures through practical exercises covering conditionals, switches, and loops.
+
+## If Statements
+
+Practice decision-making with if statements and conditional logic.
+
+<Accordion title="Age Seasons">
+**Objective:** Use if-else statements to categorize ages
+
+Print different messages based on age ranges.
+
+**Expected Output:**
+- Age > 60: "Getting older"
+- Age > 30: "Getting wiser"
+- Age > 20: "Adulthood"
+- Age > 10: "Young blood"
+- Otherwise: "Booting up"
+
+**Key Concepts:**
+- If-else chains
+- Comparison operators
+- Order of conditions matters
+
+**Approach:**
+```go
+age := 35
+if age > 60 {
+    fmt.Println("Getting older")
+} else if age > 30 {
+    fmt.Println("Getting wiser")
+}
+// Continue the chain...
+```
+</Accordion>
+
+<Accordion title="Simplify It">
+**Objective:** Refactor complex if statements
+
+Simplify nested or complex if statements for better readability.
+
+**Key Concepts:**
+- Code simplification
+- Logical operators
+- Guard clauses
+
+**Approach:**
+Look for opportunities to:
+- Combine conditions with `&&` or `||`
+- Use early returns
+- Eliminate unnecessary nesting
+</Accordion>
+
+<Accordion title="Arg Count">
+**Objective:** Validate command-line arguments
+
+Check if the correct number of arguments are provided.
+
+**Key Concepts:**
+- Length checking
+- Input validation
+- Error messages
+
+**Approach:**
+```go
+if len(os.Args) < 2 {
+    fmt.Println("Please provide an argument")
+    return
+}
+```
+</Accordion>
+
+<Accordion title="Vowel or Consonant">
+**Objective:** Classify characters
+
+Determine if a given character is a vowel or consonant.
+
+**Key Concepts:**
+- Character comparison
+- Multiple conditions
+- String indexing
+
+**Approach:**
+1. Get first character from input
+2. Compare against vowels (a, e, i, o, u)
+3. Use `||` for multiple vowel checks
+</Accordion>
+
+## Error Handling with If
+
+Learn to handle errors gracefully using if statements.
+
+<Accordion title="Movie Ratings">
+**Objective:** Parse and validate ratings
+
+Convert string ratings to numbers and validate them.
+
+**Key Concepts:**
+- `strconv` package
+- Error checking
+- Input validation
+
+**Approach:**
+```go
+rating, err := strconv.Atoi(input)
+if err != nil {
+    fmt.Println("Invalid rating")
+    return
+}
+```
+</Accordion>
+
+<Accordion title="Odd or Even">
+**Objective:** Check number parity with error handling
+
+Determine if a number is odd or even, handling invalid input.
+
+**Key Concepts:**
+- Modulo operator `%`
+- Error handling pattern
+- Type conversion
+
+**Approach:**
+```go
+num, err := strconv.Atoi(os.Args[1])
+if err != nil {
+    fmt.Println("Not a valid number")
+    return
+}
+if num%2 == 0 {
+    fmt.Println("Even")
+} else {
+    fmt.Println("Odd")
+}
+```
+</Accordion>
+
+<Accordion title="Leap Year">
+**Objective:** Determine if a year is a leap year
+
+Implement leap year logic with proper input validation.
+
+**Rules:**
+- Divisible by 4: leap year
+- EXCEPT divisible by 100: not a leap year
+- EXCEPT divisible by 400: leap year
+
+**Approach:**
+```go
+year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)
+```
+</Accordion>
+
+<Accordion title="Simplify Leap Year">
+**Objective:** Refactor leap year logic
+
+Make the leap year checker more concise and readable.
+
+**Key Concepts:**
+- Boolean expressions
+- Operator precedence
+- Code clarity
+
+**Approach:**
+Combine all conditions into a single, clear boolean expression.
+</Accordion>
+
+<Accordion title="Days in a Month">
+**Objective:** Calculate days for any month
+
+Return the number of days in a given month, considering leap years.
+
+**Key Concepts:**
+- Multiple conditions
+- Combining if statements
+- Edge cases
+
+**Approach:**
+1. Check for 30-day months
+2. Check for 31-day months
+3. Handle February with leap year logic
+</Accordion>
+
+## Switch Statements
+
+Use switch statements for cleaner multi-way branching.
+
+<Accordion title="Richter Scale">
+**Objective:** Classify earthquake magnitudes
+
+Describe earthquake effects based on Richter scale values.
+
+**Key Concepts:**
+- Switch with expressions
+- Case ranges
+- Fallthrough behavior
+
+**Approach:**
+```go
+switch {
+case magnitude < 2.0:
+    fmt.Println("Micro")
+case magnitude < 3.0:
+    fmt.Println("Minor")
+case magnitude < 4.0:
+    fmt.Println("Light")
+// Continue...
+}
+```
+</Accordion>
+
+<Accordion title="Richter Scale #2">
+**Objective:** Enhanced Richter scale classifier
+
+Add more granular classifications and descriptions.
+
+**Approach:**
+Expand the previous exercise with more detailed magnitude ranges and descriptions.
+</Accordion>
+
+<Accordion title="Convert">
+**Objective:** Unit conversion tool
+
+Create a unit converter using switch statements.
+
+**Key Concepts:**
+- Switch on strings
+- Case matching
+- Conversion formulas
+
+**Approach:**
+```go
+switch unit {
+case "km":
+    // Convert to miles
+case "mi":
+    // Convert to kilometers
+case "c":
+    // Convert Celsius to Fahrenheit
+}
+```
+</Accordion>
+
+<Accordion title="String Manipulator">
+**Objective:** String operations based on commands
+
+Perform different string operations based on input commands.
+
+**Operations:**
+- Uppercase
+- Lowercase
+- Reverse
+- Length
+
+**Approach:**
+Use switch to match command strings and apply the corresponding operation.
+</Accordion>
+
+<Accordion title="Days in Month (Switch)">
+**Objective:** Reimplement days-in-month using switch
+
+Use a switch statement instead of if-else for cleaner code.
+
+**Approach:**
+```go
+switch month {
+case 1, 3, 5, 7, 8, 10, 12:
+    days = 31
+case 4, 6, 9, 11:
+    days = 30
+case 2:
+    // Handle February with leap year
+}
+```
+</Accordion>
+
+## Loops
+
+Master iteration with Go's versatile for loop.
+
+### Basic Loops
+
+<Accordion title="Sum the Numbers">
+**Objective:** Calculate sum using a basic loop
+
+Sum numbers from 1 to 10 using a for loop.
+
+**Approach:**
+```go
+sum := 0
+for i := 1; i <= 10; i++ {
+    sum += i
+}
+```
+</Accordion>
+
+<Accordion title="Sum the Numbers (Verbose)">
+**Objective:** Add detailed output to loop
+
+Print each step of the summation process.
+
+**Approach:**
+Print the current number and running total in each iteration.
+</Accordion>
+
+<Accordion title="Sum Up to N">
+**Objective:** Sum with user-provided limit
+
+Sum numbers from 1 to N where N comes from input.
+
+**Approach:**
+1. Parse N from command-line argument
+2. Loop from 1 to N
+3. Calculate and print sum
+</Accordion>
+
+<Accordion title="Only Evens">
+**Objective:** Process only even numbers
+
+Print or sum only even numbers in a range.
+
+**Approach:**
+```go
+for i := 0; i <= 20; i += 2 {
+    fmt.Println(i)
+}
+// Or use modulo:
+for i := 0; i <= 20; i++ {
+    if i%2 == 0 {
+        fmt.Println(i)
+    }
+}
+```
+</Accordion>
+
+### Loop Control
+
+<Accordion title="Break Up">
+**Objective:** Exit loops early with break
+
+Use `break` to stop a loop when a condition is met.
+
+**Key Concepts:**
+- Break statement
+- Loop termination
+- Conditional exit
+
+**Approach:**
+```go
+for i := 0; i < 100; i++ {
+    if i == 50 {
+        break
+    }
+    fmt.Println(i)
+}
+```
+</Accordion>
+
+<Accordion title="Infinite Kill">
+**Objective:** Control infinite loops
+
+Create and properly exit an infinite loop.
+
+**Approach:**
+```go
+for {
+    // Do work
+    if shouldExit {
+        break
+    }
+}
+```
+</Accordion>
+
+### Multiplication Table
+
+<Accordion title="Dynamic Multiplication Table">
+**Objective:** Generate multiplication tables
+
+Create a multiplication table for any given number.
+
+**Approach:**
+```go
+num := 5
+for i := 1; i <= 10; i++ {
+    fmt.Printf("%d x %d = %d\n", num, i, num*i)
+}
+```
+</Accordion>
+
+<Accordion title="Math Tables">
+**Objective:** Generate multiple operation tables
+
+Create tables for addition, subtraction, multiplication, and division.
+
+**Approach:**
+Use nested loops or multiple loops for different operations.
+</Accordion>
+
+### Advanced Loop Exercises
+
+<Accordion title="Lucky Number Game">
+**Objective:** Build a number guessing game
+
+Create a game where the player guesses a random number.
+
+**Key Concepts:**
+- Random numbers
+- User input in loops
+- Win conditions
+
+**Sub-exercises:**
+- First Turn Winner: Check if player wins on first try
+- Random Messages: Show different messages for guesses
+- Double Guesses: Track guess attempts
+- Verbose Mode: Add detailed output
+- Enough Picks: Limit number of guesses
+- Dynamic Difficulty: Adjust range based on performance
+</Accordion>
+
+<Accordion title="Word Finder">
+**Objective:** Search for words in text
+
+Find and count occurrences of words in a string.
+
+**Key Concepts:**
+- String iteration
+- Pattern matching
+- Substring comparison
+
+**Approach:**
+Loop through text and compare substrings to target word.
+</Accordion>
+
+<Accordion title="Crunch the Primes">
+**Objective:** Find prime numbers
+
+Generate prime numbers using nested loops.
+
+**Key Concepts:**
+- Prime number algorithm
+- Nested loops
+- Optimization techniques
+
+**Approach:**
+1. Loop through numbers
+2. For each number, check divisibility
+3. Print if prime
+</Accordion>
+
+## Loop Best Practices
+
+<Note>
+**Performance Tips:**
+- Use `break` to exit early when possible
+- Avoid unnecessary iterations
+- Consider loop scope for variable declarations
+- Use range loops for slices when appropriate (covered in Data Structures)
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Structures" icon="database" href="/exercises/data-structures">
+    Work with arrays, slices, maps, and structs
+  </Card>
+  <Card title="Functions" icon="function" href="/exercises/functions">
+    Learn to write reusable functions
+  </Card>
+</CardGroup>

@@ -1,0 +1,596 @@
+---
+title: "Troubleshooting Guide"
+description: "Common issues and solutions when learning Go"
+icon: "wrench"
+---
+
+## Overview
+
+This guide covers common issues encountered while learning Go, based on typical problems students face in the Learn Go course. Each section includes the error, explanation, and solution.
+
+## Compilation Errors
+
+### Unused Variables
+
+<CodeGroup>
+```go Error
+func main() {
+    name := "Alice"
+    // Error: name declared but not used
+}
+```
+
+```go Solution
+func main() {
+    name := "Alice"
+    fmt.Println(name)  // Use the variable
+}
+```
+</CodeGroup>
+
+<Warning>
+**Why this happens**: Go enforces code cleanliness by not allowing unused variables. This prevents clutter and potential bugs.
+</Warning>
+
+**Fix strategies:**
+- Use the variable
+- Remove the declaration
+- Use the blank identifier `_` if you must ignore it:
+  ```go
+  _, err := doSomething()  // Ignore first return value
+  ```
+
+### Unused Imports
+
+```go Error
+package main
+
+import (
+    "fmt"
+    "os"  // imported but not used
+)
+
+func main() {
+    fmt.Println("Hello")
+}
+```
+
+**Solutions:**
+1. Remove the unused import
+2. Use `goimports` to automatically manage imports
+3. In development, use blank import: `_ "os"` (remove before committing)
+
+### Short Declaration in Wrong Scope
+
+<CodeGroup>
+```go Error
+var name string
+
+func main() {
+    name := "Alice"  // Creates NEW variable, doesn't assign
+    setName()
+}
+
+func setName() {
+    fmt.Println(name)  // Prints empty string!
+}
+```
+
+```go Solution
+var name string
+
+func main() {
+    name = "Alice"  // Use = not :=
+    setName()
+}
+
+func setName() {
+    fmt.Println(name)  // Prints "Alice"
+}
+```
+</CodeGroup>
+
+<Tip>
+`:=` always creates a new variable. Use `=` to assign to existing variables.
+</Tip>
+
+### Cannot Use Type X as Type Y
+
+```go Error
+var age int = 10
+var height float64 = age  // Error: cannot use age (type int) as type float64
+```
+
+```go Solution
+var age int = 10
+var height float64 = float64(age)  // Explicit conversion required
+```
+
+<Info>
+Go requires explicit type conversion. There are no implicit conversions between types.
+</Info>
+
+## Runtime Errors
+
+### Index Out of Range
+
+```go From 14-arrays, 16-slices
+// Error: panic: runtime error: index out of range [5] with length 3
+slice := []int{10, 20, 30}
+value := slice[5]  // Panic!
+```
+
+**Solutions:**
+
+<CodeGroup>
+```go Check Length
+slice := []int{10, 20, 30}
+index := 5
+
+if index < len(slice) {
+    value := slice[index]
+    fmt.Println(value)
+} else {
+    fmt.Println("Index out of range")
+}
+```
+
+```go Use Range
+slice := []int{10, 20, 30}
+for i, v := range slice {
+    fmt.Printf("%d: %d\n", i, v)
+}
+```
+</CodeGroup>
+
+### Nil Pointer Dereference
+
+```go From 26-pointers
+var p *int
+*p = 10  // panic: runtime error: invalid memory address
+```
+
+**Solution:**
+
+```go
+var p *int
+value := 10
+p = &value  // Initialize pointer first
+*p = 20     // Now safe to dereference
+```
+
+<Warning>
+Always check if a pointer is `nil` before dereferencing, or ensure it's initialized.
+</Warning>
+
+### Slice Append Issues
+
+```go From 16-slices
+// Problem: Original slice doesn't change
+func addItem(items []string) {
+    items = append(items, "new")  // Local copy modified
+}
+
+func main() {
+    myItems := []string{"a", "b"}
+    addItem(myItems)
+    fmt.Println(myItems)  // Still ["a", "b"]
+}
+```
+
+**Solution:**
+
+```go
+func addItem(items []string) []string {
+    return append(items, "new")
+}
+
+func main() {
+    myItems := []string{"a", "b"}
+    myItems = addItem(myItems)  // Capture return value
+    fmt.Println(myItems)  // ["a", "b", "new"]
+}
+```
+
+## Logic Errors
+
+### Range Loop Variable Reuse
+
+```go Common Mistake
+items := []string{"a", "b", "c"}
+var ptrs []*string
+
+for _, item := range items {
+    ptrs = append(ptrs, &item)  // Bug: all point to same variable!
+}
+
+// All pointers point to "c"
+for _, ptr := range ptrs {
+    fmt.Println(*ptr)  // Prints "c" three times
+}
+```
+
+**Solution:**
+
+```go
+items := []string{"a", "b", "c"}
+var ptrs []*string
+
+for _, item := range items {
+    item := item  // Create new variable
+    ptrs = append(ptrs, &item)
+}
+
+// Or better:
+for i := range items {
+    ptrs = append(ptrs, &items[i])
+}
+```
+
+<Note>
+The range loop reuses the same variable. If you take its address, you'll get unexpected results.
+</Note>
+
+### Map Iteration Order
+
+```go From 22-maps
+m := map[string]int{
+    "a": 1,
+    "b": 2,
+    "c": 3,
+}
+
+for k, v := range m {
+    fmt.Println(k, v)  // Order is random!
+}
+```
+
+<Info>
+Map iteration order is **intentionally randomized** in Go. Don't rely on it.
+</Info>
+
+**Solution for ordered iteration:**
+
+```go
+// Get keys and sort them
+keys := make([]string, 0, len(m))
+for k := range m {
+    keys = append(keys, k)
+}
+sort.Strings(keys)
+
+// Iterate in order
+for _, k := range keys {
+    fmt.Println(k, m[k])
+}
+```
+
+### String Concatenation in Loops
+
+```go Inefficient
+var result string
+for i := 0; i < 1000; i++ {
+    result += fmt.Sprintf("item-%d,", i)  // Creates new string each time
+}
+```
+
+**Better solution:**
+
+```go From 19-strings-runes-bytes
+var builder strings.Builder
+for i := 0; i < 1000; i++ {
+    builder.WriteString(fmt.Sprintf("item-%d,", i))
+}
+result := builder.String()
+```
+
+## Error Handling Issues
+
+### Ignoring Errors
+
+```go Bad Practice
+file, _ := os.Open("data.txt")  // Ignoring error
+defer file.Close()
+// file might be nil, causing panic
+```
+
+**Solution:**
+
+```go From 11-if/questions/4-error-handling.md
+file, err := os.Open("data.txt")
+if err != nil {
+    return fmt.Errorf("failed to open file: %w", err)
+}
+defer file.Close()
+// Safe to use file
+```
+
+<Warning>
+Never ignore errors with `_` unless you have a very good reason. Always check error returns.
+</Warning>
+
+### Using Values When Errors Occur
+
+```go From 11-if examples - Wrong
+d, err := time.ParseDuration("invalid")
+if err != nil {
+    fmt.Println(d)  // Don't use d when there's an error!
+}
+```
+
+```go Correct
+d, err := time.ParseDuration("1h30m")
+if err != nil {
+    fmt.Println("Error:", err)
+    return
+}
+fmt.Println("Duration:", d)  // Only use d when no error
+```
+
+## Type-Related Issues
+
+### Interface Comparison
+
+```go
+var a interface{} = []int{1, 2, 3}
+var b interface{} = []int{1, 2, 3}
+
+if a == b {  // panic: comparing uncomparable type []int
+    fmt.Println("equal")
+}
+```
+
+<Info>
+Slices, maps, and functions are not comparable. Wrapping them in `interface{}` doesn't change that.
+</Info>
+
+**Solution:**
+
+```go
+import "reflect"
+
+if reflect.DeepEqual(a, b) {
+    fmt.Println("equal")
+}
+```
+
+### Type Assertion Panic
+
+```go
+var i interface{} = "hello"
+num := i.(int)  // panic: interface conversion: interface is string, not int
+```
+
+**Solution:**
+
+```go
+var i interface{} = "hello"
+
+// Safe type assertion
+if num, ok := i.(int); ok {
+    fmt.Println("Number:", num)
+} else {
+    fmt.Println("Not an int")
+}
+
+// Or use type switch
+switch v := i.(type) {
+case int:
+    fmt.Println("Int:", v)
+case string:
+    fmt.Println("String:", v)
+default:
+    fmt.Println("Unknown type")
+}
+```
+
+## Concurrency Issues
+
+### Goroutine Not Executing
+
+```go
+func main() {
+    go fmt.Println("Hello from goroutine")
+    // Program exits immediately, goroutine might not run
+}
+```
+
+**Solution:**
+
+```go
+func main() {
+    done := make(chan bool)
+    
+    go func() {
+        fmt.Println("Hello from goroutine")
+        done <- true
+    }()
+    
+    <-done  // Wait for goroutine to finish
+}
+```
+
+### Race Conditions
+
+```go Problem
+var counter int
+
+func increment() {
+    counter++  // Not atomic!
+}
+
+func main() {
+    for i := 0; i < 1000; i++ {
+        go increment()
+    }
+    time.Sleep(time.Second)
+    fmt.Println(counter)  // Might not be 1000!
+}
+```
+
+**Solutions:**
+
+<CodeGroup>
+```go Using Mutex
+var (
+    counter int
+    mu      sync.Mutex
+)
+
+func increment() {
+    mu.Lock()
+    counter++
+    mu.Unlock()
+}
+```
+
+```go Using Atomic
+var counter int64
+
+func increment() {
+    atomic.AddInt64(&counter, 1)
+}
+```
+</CodeGroup>
+
+## Common Gotchas
+
+### Defer in Loops
+
+```go Problem
+for _, file := range files {
+    f, err := os.Open(file)
+    if err != nil {
+        continue
+    }
+    defer f.Close()  // Won't close until function ends!
+}
+```
+
+**Solution:**
+
+```go
+for _, file := range files {
+    func() {
+        f, err := os.Open(file)
+        if err != nil {
+            return
+        }
+        defer f.Close()  // Closes when anonymous func returns
+        // Process file
+    }()
+}
+```
+
+### Method on Pointer vs Value
+
+```go From interfaces examples
+type Counter struct {
+    count int
+}
+
+func (c *Counter) Increment() {
+    c.count++
+}
+
+func main() {
+    c := Counter{}
+    c.Increment()  // Works - Go automatically takes address
+    
+    // But:
+    Counter{}.Increment()  // Error: cannot call pointer method on Counter literal
+}
+```
+
+**Solution:**
+
+```go
+c := Counter{}
+c.Increment()  // OK
+
+// Or:
+(&Counter{}).Increment()  // OK
+```
+
+## Debugging Tips
+
+### Print Debugging
+
+```go
+// Use %#v for detailed output
+fmt.Printf("%#v\n", myStruct)  // Shows field names and values
+
+// Show types
+fmt.Printf("%T\n", variable)
+
+// Show memory addresses
+fmt.Printf("%p\n", &variable)
+```
+
+### Use go vet
+
+```bash
+go vet ./...
+```
+
+Catches common mistakes like:
+- Printf format string issues
+- Unreachable code
+- Incorrect struct tags
+
+### Use go fmt
+
+```bash
+go fmt ./...
+```
+
+Automatically formats code to Go standards.
+
+### Enable Race Detector
+
+```bash
+go run -race main.go
+go test -race ./...
+```
+
+Detects data races in concurrent code.
+
+## Getting Help
+
+<Steps>
+  <Step title="Check the error message">
+    Go's error messages are usually clear and point to the exact line.
+  </Step>
+  
+  <Step title="Search the course materials">
+    Use the search function to find relevant examples and explanations.
+  </Step>
+  
+  <Step title="Consult the FAQ">
+    Check the [FAQ](/community/faq) for common questions.
+  </Step>
+  
+  <Step title="Ask the community">
+    If stuck, ask in the course community or forums with a minimal reproducible example.
+  </Step>
+</Steps>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Best Practices" href="/reference/best-practices" icon="star">
+    Avoid issues by following best practices
+  </Card>
+  
+  <Card title="Go Idioms" href="/reference/idioms" icon="code">
+    Learn idiomatic patterns
+  </Card>
+  
+  <Card title="FAQ" href="/community/faq" icon="question">
+    Frequently asked questions
+  </Card>
+  
+  <Card title="Contributing" href="/community/contributing" icon="code-pull-request">
+    Report issues or contribute fixes
+  </Card>
+</CardGroup>

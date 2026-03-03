@@ -1,0 +1,343 @@
+---
+title: "Variables"
+description: "Learn how to declare, initialize, and work with variables in Go"
+---
+
+## Basic Data Types
+
+Go has several basic data types that you'll use to create variables:
+
+### Integer Types
+
+```go
+fmt.Println(-200, -100, 0, 50, 100)
+```
+
+Integers can be positive, negative, or zero. Go provides several integer types with different sizes (`int8`, `int16`, `int32`, `int64`, and `int`).
+
+### Floating-Point Types
+
+```go
+fmt.Println(-50.5, -20.5, 0.0, 1.0, 100.56)
+```
+
+Floating-point numbers represent decimal values. Go provides `float32` and `float64` types.
+
+### Boolean Type
+
+```go
+fmt.Println(true, false)
+```
+
+Booleans represent truth values and can only be `true` or `false`.
+
+### String Type
+
+```go
+fmt.Println("")      // empty string
+fmt.Println("hi")
+fmt.Println("nasılsın?")   // Unicode support
+fmt.Println("hi there 星!") // Emoji and special characters
+```
+
+Strings contain text and fully support UTF-8 Unicode characters.
+
+## Variable Declaration
+
+### Basic Syntax
+
+The most explicit way to declare a variable in Go uses the `var` keyword:
+
+```go
+var speed int
+```
+
+This declares a variable named `speed` of type `int`.
+
+<Steps>
+  <Step title="Use the var keyword">
+    Start your declaration with `var`
+  </Step>
+  
+  <Step title="Choose a name">
+    Pick a descriptive name following Go naming conventions
+  </Step>
+  
+  <Step title="Specify the type">
+    Declare what type of data the variable will hold
+  </Step>
+</Steps>
+
+### Naming Rules
+
+Variable names in Go must follow these rules:
+
+- Start with a letter or underscore
+- Contain only letters, numbers, and underscores
+- Cannot be a Go keyword (like `var`, `func`, `package`, etc.)
+- Use camelCase for multi-word names
+
+```go
+// Valid names
+var speed int
+var playerScore int
+var _temp int
+var maxRetries int
+
+// Invalid names
+// var 2fast int        // Cannot start with number
+// var player-score int // Cannot use hyphens
+// var func int         // Cannot use keywords
+```
+
+<Tip>
+Go convention uses camelCase (not snake_case) for variable names. Exported variables should start with an uppercase letter.
+</Tip>
+
+## Zero Values
+
+When you declare a variable without initializing it, Go automatically assigns it a "zero value":
+
+```go
+var speed int     // 0
+var heat float64  // 0.0
+var off bool      // false
+var brand string  // "" (empty string)
+
+fmt.Println(speed)  // 0
+fmt.Println(heat)   // 0
+fmt.Println(off)    // false
+fmt.Printf("%q\n", brand) // ""
+```
+
+<Note>
+**Zero values by type:**
+- Numeric types: `0`
+- Boolean: `false`
+- String: `""` (empty string)
+- Pointers, slices, maps, channels, functions, interfaces: `nil`
+</Note>
+
+This is a key safety feature - there are no uninitialized variables in Go!
+
+## Initialization
+
+You can declare and initialize a variable in one statement:
+
+```go
+var speed int = 100
+var heat float64 = 25.5
+var off bool = true
+var brand string = "Nike"
+```
+
+### Type Inference
+
+When you provide an initial value, Go can infer the type automatically:
+
+```go
+var speed = 100        // int
+var heat = 25.5        // float64
+var off = true         // bool
+var brand = "Nike"     // string
+```
+
+This is more concise and equally safe - Go determines the type from the initial value.
+
+## Short Declaration
+
+The most common way to declare variables in Go is the short declaration syntax using `:=`:
+
+```go
+safe := true
+```
+
+This is equivalent to:
+```go
+var safe bool = true
+```
+
+**Benefits of short declaration:**
+- More concise
+- No need for the `var` keyword
+- Type is automatically inferred
+- Can only be used inside functions
+
+```go
+func main() {
+    // Short declaration - best practice inside functions
+    speed := 100
+    name := "Alice"
+    running := true
+    
+    fmt.Println(speed, name, running)
+}
+```
+
+<Warning>
+Short declaration (`:=`) can only be used inside functions. At the package level, you must use `var`.
+</Warning>
+
+## Multiple Declarations
+
+### Multiple Variables of Same Type
+
+You can declare multiple variables at once:
+
+```go
+var (
+    speed int
+    heat  float64
+    off   bool
+    brand string
+)
+```
+
+### Multiple Variables with Initialization
+
+```go
+var (
+    speed = 100
+    heat  = 25.5
+    off   = true
+    brand = "Nike"
+)
+```
+
+### Parallel Assignment
+
+You can assign multiple variables in a single line:
+
+```go
+var width, height int = 100, 200
+var x, y, z = 1, 2.5, "hello"
+```
+
+With short declaration:
+
+```go
+name, age := "Alice", 30
+x, y, z := 1, 2.5, "hello"
+```
+
+This is particularly useful when functions return multiple values:
+
+```go
+result, err := someFunction()
+```
+
+## The Blank Identifier
+
+If you declare a variable but don't use it, Go will produce a compile error. The blank identifier `_` lets you discard values you don't need:
+
+```go
+func main() {
+    var speed int
+    _ = speed  // Tells compiler we know the variable is unused
+}
+```
+
+This is more commonly used with multiple return values:
+
+```go
+value, _ := functionReturningTwo()  // Ignore the second return value
+_, err := functionReturningTwo()     // Ignore the first return value
+```
+
+<Note>
+Go's "no unused variables" rule helps keep code clean and catches potential bugs. Use the blank identifier intentionally when you need to ignore values.
+</Note>
+
+## Assignment vs Declaration
+
+Once a variable is declared, you assign new values with `=` (not `:=`):
+
+```go
+var speed int    // Declaration
+speed = 100      // Assignment
+speed = 200      // Another assignment
+```
+
+```go
+name := "Alice"  // Declaration with :=
+name = "Bob"     // Assignment with =
+// name := "Charlie" // ✗ Error: no new variables on left side of :=
+```
+
+### Redeclaration with :=
+
+Short declaration can redeclare variables if at least one new variable is also being declared:
+
+```go
+x := 10
+x, y := 20, 30  // ✓ OK - y is new, x is reassigned
+```
+
+## Type Conversion
+
+Go requires explicit type conversion - there are no implicit conversions:
+
+```go
+var speed int = 100
+var heat float64
+
+heat = float64(speed)  // Explicit conversion required
+// heat = speed        // ✗ Error: cannot use int as float64
+```
+
+## Best Practices
+
+1. **Use short declaration (`:=`) inside functions** - it's concise and idiomatic
+2. **Use `var` for package-level declarations** - short declaration doesn't work there
+3. **Choose descriptive names** - `userCount` is better than `uc` or `x`
+4. **Declare variables close to where they're used** - improves readability
+5. **Initialize with zero values explicitly if it aids clarity**
+
+```go
+// Good
+func processUser(id int) {
+    count := getUserCount(id)
+    // use count immediately
+}
+
+// Less ideal
+func processUser(id int) {
+    var count int
+    // ... many lines of code ...
+    count = getUserCount(id)
+}
+```
+
+## Common Patterns
+
+### Declaring related variables
+
+```go
+var (
+    width  = 1920
+    height = 1080
+    title  = "My Window"
+)
+```
+
+### Multiple return values
+
+```go
+name, age := getUser()
+result, err := doSomething()
+
+if err != nil {
+    // handle error
+}
+```
+
+### Swapping values
+
+```go
+a, b := 1, 2
+b, a = a, b  // Swap values
+```
+
+<Tip>
+Go's variable declaration syntax may seem verbose at first, but it makes code explicit and helps prevent common programming errors like uninitialized variables and type mismatches.
+</Tip>

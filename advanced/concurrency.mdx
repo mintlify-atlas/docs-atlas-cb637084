@@ -1,0 +1,759 @@
+---
+title: 'Concurrency'
+description: 'Master goroutines, channels, and concurrent programming patterns in Go'
+---
+
+## Introduction to Concurrency
+
+Concurrency is one of Go's most powerful features. Go makes it easy to write programs that do multiple things at once through **goroutines** (lightweight threads) and **channels** (communication between goroutines).
+
+<Note>
+**Concurrency vs Parallelism:**
+- **Concurrency** is about dealing with multiple things at once (structure)
+- **Parallelism** is about doing multiple things at once (execution)
+
+Go provides concurrency primitives. Whether they run in parallel depends on your hardware and runtime.
+</Note>
+
+## Goroutines
+
+A goroutine is a lightweight thread managed by the Go runtime. They're much cheaper than OS threads - you can easily run thousands of goroutines.
+
+### Creating Goroutines
+
+Starting a goroutine is simple - just use the `go` keyword:
+
+```go Basic Goroutine
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func say(s string) {
+    for i := 0; i < 3; i++ {
+        time.Sleep(100 * time.Millisecond)
+        fmt.Println(s)
+    }
+}
+
+func main() {
+    // Start a goroutine
+    go say("world")
+    
+    // Run in main goroutine
+    say("hello")
+}
+```
+
+Output (order may vary):
+```
+hello
+world
+hello
+world
+hello
+world
+```
+
+<Warning>
+When `main()` returns, all goroutines are terminated, whether they've finished or not. Use synchronization to wait for goroutines to complete.
+</Warning>
+
+### Anonymous Goroutines
+
+You can start goroutines with anonymous functions:
+
+```go Anonymous Goroutines
+func main() {
+    // Start multiple goroutines
+    for i := 0; i < 5; i++ {
+        go func(n int) {
+            fmt.Printf("Goroutine %d\n", n)
+        }(i) // Pass i as argument
+    }
+    
+    time.Sleep(time.Second) // Wait for goroutines (not ideal)
+}
+```
+
+<Warning>
+**Closure Gotcha:** Always pass loop variables as arguments to avoid capturing the same variable:
+
+```go Bad
+for i := 0; i < 5; i++ {
+    go func() {
+        fmt.Println(i) // May print 5 multiple times!
+    }()
+}
+```
+
+```go Good
+for i := 0; i < 5; i++ {
+    go func(n int) {
+        fmt.Println(n) // Each goroutine gets its own copy
+    }(i)
+}
+```
+</Warning>
+
+## Channels
+
+Channels are Go's way of communicating between goroutines. They're typed conduits through which you can send and receive values.
+
+### Creating and Using Channels
+
+```go Basic Channel Usage
+func main() {
+    // Create a channel
+    messages := make(chan string)
+    
+    // Send value in a goroutine
+    go func() {
+        messages <- "ping" // Send to channel
+    }()
+    
+    // Receive from channel
+    msg := <-messages // Receive from channel
+    fmt.Println(msg)  // ping
+}
+```
+
+### Channel Operations
+
+<Tabs>
+  <Tab title="Send">
+    ```go Sending
+    ch := make(chan int)
+    
+    go func() {
+        ch <- 42 // Send value to channel
+        ch <- 17
+    }()
+    ```
+  </Tab>
+  
+  <Tab title="Receive">
+    ```go Receiving
+    ch := make(chan int)
+    
+    go func() {
+        ch <- 42
+    }()
+    
+    value := <-ch        // Receive and assign
+    fmt.Println(<-ch)    // Receive and use directly
+    ```
+  </Tab>
+  
+  <Tab title="Buffered">
+    ```go Buffered Channels
+    // Unbuffered: sender blocks until receiver is ready
+    ch1 := make(chan int)
+    
+    // Buffered: sender blocks only when buffer is full
+    ch2 := make(chan int, 3)
+    
+    ch2 <- 1 // Doesn't block
+    ch2 <- 2 // Doesn't block
+    ch2 <- 3 // Doesn't block
+    // ch2 <- 4 // Would block - buffer full
+    ```
+  </Tab>
+  
+  <Tab title="Close">
+    ```go Closing Channels
+    ch := make(chan int, 2)
+    ch <- 1
+    ch <- 2
+    close(ch) // Signal no more values
+    
+    // Can still receive from closed channel
+    fmt.Println(<-ch) // 1
+    fmt.Println(<-ch) // 2
+    fmt.Println(<-ch) // 0 (zero value)
+    
+    // Check if channel is closed
+    v, ok := <-ch
+    if !ok {
+        fmt.Println("Channel closed")
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Channel Directions
+
+You can specify whether a channel is for sending or receiving:
+
+```go Channel Directions
+// Send-only channel
+func send(ch chan<- int) {
+    ch <- 42
+    // value := <-ch // Error: can't receive on send-only channel
+}
+
+// Receive-only channel
+func receive(ch <-chan int) {
+    value := <-ch
+    fmt.Println(value)
+    // ch <- 42 // Error: can't send on receive-only channel
+}
+
+func main() {
+    ch := make(chan int)
+    
+    go send(ch)
+    receive(ch)
+}
+```
+
+This provides type safety and makes your intent clear.
+
+## Select Statement
+
+The `select` statement lets you wait on multiple channel operations:
+
+```go Select Statement
+func main() {
+    ch1 := make(chan string)
+    ch2 := make(chan string)
+    
+    go func() {
+        time.Sleep(1 * time.Second)
+        ch1 <- "one"
+    }()
+    
+    go func() {
+        time.Sleep(2 * time.Second)
+        ch2 <- "two"
+    }()
+    
+    for i := 0; i < 2; i++ {
+        select {
+        case msg1 := <-ch1:
+            fmt.Println("Received:", msg1)
+        case msg2 := <-ch2:
+            fmt.Println("Received:", msg2)
+        }
+    }
+}
+```
+
+### Select with Default
+
+```go Non-blocking Operations
+select {
+case msg := <-messages:
+    fmt.Println("Received:", msg)
+default:
+    fmt.Println("No message available")
+}
+```
+
+### Select with Timeout
+
+```go Timeout Pattern
+select {
+case res := <-ch:
+    fmt.Println("Result:", res)
+case <-time.After(1 * time.Second):
+    fmt.Println("Timeout!")
+}
+```
+
+## Common Patterns
+
+### Worker Pool
+
+```go Worker Pool
+func worker(id int, jobs <-chan int, results chan<- int) {
+    for job := range jobs {
+        fmt.Printf("Worker %d processing job %d\n", id, job)
+        time.Sleep(time.Second)
+        results <- job * 2
+    }
+}
+
+func main() {
+    const numJobs = 5
+    jobs := make(chan int, numJobs)
+    results := make(chan int, numJobs)
+    
+    // Start 3 workers
+    for w := 1; w <= 3; w++ {
+        go worker(w, jobs, results)
+    }
+    
+    // Send jobs
+    for j := 1; j <= numJobs; j++ {
+        jobs <- j
+    }
+    close(jobs)
+    
+    // Collect results
+    for a := 1; a <= numJobs; a++ {
+        <-results
+    }
+}
+```
+
+### Pipeline
+
+```go Pipeline Pattern
+func generate(nums ...int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for _, n := range nums {
+            out <- n
+        }
+        close(out)
+    }()
+    return out
+}
+
+func square(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for n := range in {
+            out <- n * n
+        }
+        close(out)
+    }()
+    return out
+}
+
+func main() {
+    // Pipeline: generate -> square
+    nums := generate(1, 2, 3, 4)
+    squared := square(nums)
+    
+    for result := range squared {
+        fmt.Println(result) // 1, 4, 9, 16
+    }
+}
+```
+
+### Fan-Out, Fan-In
+
+```go Fan-Out, Fan-In
+func fanOut(in <-chan int, workers int) []<-chan int {
+    channels := make([]<-chan int, workers)
+    for i := 0; i < workers; i++ {
+        channels[i] = square(in)
+    }
+    return channels
+}
+
+func fanIn(channels ...<-chan int) <-chan int {
+    out := make(chan int)
+    var wg sync.WaitGroup
+    
+    for _, ch := range channels {
+        wg.Add(1)
+        go func(c <-chan int) {
+            defer wg.Done()
+            for n := range c {
+                out <- n
+            }
+        }(ch)
+    }
+    
+    go func() {
+        wg.Wait()
+        close(out)
+    }()
+    
+    return out
+}
+
+func main() {
+    in := generate(1, 2, 3, 4, 5, 6, 7, 8)
+    
+    // Fan-out to 3 workers
+    workers := fanOut(in, 3)
+    
+    // Fan-in results
+    results := fanIn(workers...)
+    
+    for result := range results {
+        fmt.Println(result)
+    }
+}
+```
+
+## Synchronization with sync Package
+
+### WaitGroup
+
+Wait for multiple goroutines to finish:
+
+```go WaitGroup
+func worker(id int, wg *sync.WaitGroup) {
+    defer wg.Done() // Decrement counter when done
+    
+    fmt.Printf("Worker %d starting\n", id)
+    time.Sleep(time.Second)
+    fmt.Printf("Worker %d done\n", id)
+}
+
+func main() {
+    var wg sync.WaitGroup
+    
+    for i := 1; i <= 5; i++ {
+        wg.Add(1) // Increment counter
+        go worker(i, &wg)
+    }
+    
+    wg.Wait() // Wait for counter to reach 0
+    fmt.Println("All workers done")
+}
+```
+
+### Mutex
+
+Protect shared state:
+
+```go Mutex
+type SafeCounter struct {
+    mu    sync.Mutex
+    count map[string]int
+}
+
+func (c *SafeCounter) Inc(key string) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.count[key]++
+}
+
+func (c *SafeCounter) Value(key string) int {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    return c.count[key]
+}
+
+func main() {
+    counter := SafeCounter{count: make(map[string]int)}
+    
+    var wg sync.WaitGroup
+    for i := 0; i < 1000; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            counter.Inc("key")
+        }()
+    }
+    
+    wg.Wait()
+    fmt.Println(counter.Value("key")) // 1000
+}
+```
+
+### Once
+
+Ensure something happens exactly once:
+
+```go sync.Once
+var (
+    instance *Database
+    once     sync.Once
+)
+
+func GetDatabase() *Database {
+    once.Do(func() {
+        instance = &Database{
+            // Initialize once
+        }
+    })
+    return instance
+}
+```
+
+## Real-World Example: Monte Carlo Pi Estimation
+
+Here's a complete example using goroutines and channels to estimate Pi using Monte Carlo simulation:
+
+```go Monte Carlo Concurrent
+package main
+
+import (
+    "fmt"
+    "math"
+    "math/rand"
+    "os"
+    "runtime"
+    "strconv"
+    "time"
+)
+
+func main() {
+    if len(os.Args) != 2 {
+        exit("Please provide the sample rate")
+    }
+    
+    samples, err := strconv.Atoi(os.Args[1])
+    if err != nil {
+        exit("Incorrect sample rate")
+    }
+    
+    elapse := measure(time.Now())
+    pi := spread(samples, runtime.NumCPU())
+    
+    fmt.Println("PI  : ", pi)
+    fmt.Println("Time: ", elapse())
+}
+
+func exit(msg string) {
+    fmt.Fprintln(os.Stderr, msg)
+    os.Exit(1)
+}
+
+func measure(start time.Time) func() time.Duration {
+    return func() time.Duration {
+        return time.Since(start)
+    }
+}
+
+// spread distributes work across P goroutines
+func spread(samples int, P int) (estimated float64) {
+    counts := make(chan float64)
+    
+    // Start P workers
+    for i := 0; i < P; i++ {
+        go func() {
+            counts <- estimate(samples / P)
+        }()
+    }
+    
+    // Collect results
+    for i := 0; i < P; i++ {
+        estimated += <-counts
+    }
+    return estimated / float64(P)
+}
+
+// estimate performs Monte Carlo simulation
+func estimate(N int) float64 {
+    const radius = 1.0
+    
+    var (
+        seed   = rand.NewSource(time.Now().UnixNano())
+        random = rand.New(seed)
+        inside int
+    )
+    
+    for i := 0; i < N; i++ {
+        x, y := random.Float64(), random.Float64()
+        
+        if num := math.Sqrt(x*x + y*y); num < radius {
+            inside++
+        }
+    }
+    return 4 * float64(inside) / float64(N)
+}
+```
+
+This example demonstrates:
+- Creating multiple goroutines (`spread` function)
+- Using channels to collect results
+- Distributing work across CPU cores
+- Measuring performance
+
+## Best Practices
+
+<AccordionGroup>
+
+<Accordion title="Don't Communicate by Sharing Memory">
+**Bad:** Sharing memory with locks
+
+```go
+var (
+    counter int
+    mu      sync.Mutex
+)
+
+func increment() {
+    mu.Lock()
+    counter++
+    mu.Unlock()
+}
+```
+
+**Good:** Share memory by communicating
+
+```go
+func counter() {
+    ch := make(chan int)
+    count := 0
+    
+    go func() {
+        for {
+            ch <- count
+            count++
+        }
+    }()
+    
+    return ch
+}
+```
+</Accordion>
+
+<Accordion title="Always Handle Channel Closing">
+```go
+func process(jobs <-chan Job) {
+    for job := range jobs {
+        // Range exits when channel is closed
+        handleJob(job)
+    }
+}
+
+// Or check explicitly
+func process(jobs <-chan Job) {
+    for {
+        job, ok := <-jobs
+        if !ok {
+            return // Channel closed
+        }
+        handleJob(job)
+    }
+}
+```
+</Accordion>
+
+<Accordion title="Prevent Goroutine Leaks">
+```go
+// Bad: Goroutine may leak
+func search(term string) <-chan Result {
+    ch := make(chan Result)
+    go func() {
+        result := doSearch(term)
+        ch <- result // Blocks forever if receiver gives up
+    }()
+    return ch
+}
+
+// Good: Use buffered channel or context
+func search(ctx context.Context, term string) <-chan Result {
+    ch := make(chan Result, 1)
+    go func() {
+        result := doSearch(term)
+        select {
+        case ch <- result:
+        case <-ctx.Done():
+            return // Exit if context cancelled
+        }
+    }()
+    return ch
+}
+```
+</Accordion>
+
+</AccordionGroup>
+
+## Common Mistakes
+
+<Warning>
+**Starting Goroutines Without Waiting**
+
+```go Bad
+func main() {
+    go doSomething()
+    // main exits, goroutine is killed
+}
+```
+
+**Good**
+
+```go Good
+func main() {
+    done := make(chan bool)
+    go func() {
+        doSomething()
+        done <- true
+    }()
+    <-done
+}
+```
+</Warning>
+
+<Warning>
+**Sending on Closed Channel**
+
+```go
+ch := make(chan int)
+close(ch)
+ch <- 1 // panic: send on closed channel
+```
+
+Only the sender should close channels, and only when necessary.
+</Warning>
+
+## Context Package
+
+For advanced scenarios like cancellation and timeouts:
+
+```go Context
+func worker(ctx context.Context) {
+    for {
+        select {
+        case <-ctx.Done():
+            fmt.Println("Worker cancelled")
+            return
+        default:
+            // Do work
+            time.Sleep(time.Second)
+            fmt.Println("Working...")
+        }
+    }
+}
+
+func main() {
+    ctx, cancel := context.WithTimeout(
+        context.Background(),
+        3*time.Second,
+    )
+    defer cancel()
+    
+    go worker(ctx)
+    
+    time.Sleep(5 * time.Second)
+}
+```
+
+## Performance Considerations
+
+<Steps>
+  <Step title="Goroutines are Cheap, But Not Free">
+    Each goroutine uses ~2KB of stack initially. Creating millions might still be a problem.
+  </Step>
+  
+  <Step title="Buffered vs Unbuffered Channels">
+    Buffered channels can improve performance by reducing blocking, but don't overuse them.
+  </Step>
+  
+  <Step title="GOMAXPROCS">
+    Go automatically sets this to the number of CPUs. Usually, you don't need to change it.
+  </Step>
+  
+  <Step title="Profile First">
+    Use Go's profiling tools (`pprof`) before optimizing concurrency.
+  </Step>
+</Steps>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">
+    Handling errors in concurrent code
+  </Card>
+  <Card title="Interfaces" icon="plug" href="/advanced/interfaces">
+    Interface patterns for concurrent code
+  </Card>
+  <Card title="Testing" icon="flask" href="/reference/best-practices">
+    Testing concurrent code
+  </Card>
+  <Card title="Context Package" icon="clock" href="/advanced/concurrency">
+    Cancellation and timeouts
+  </Card>
+</CardGroup>

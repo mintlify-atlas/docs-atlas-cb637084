@@ -1,0 +1,270 @@
+---
+title: "Arrays"
+description: "Learn about fixed-size arrays in Go, including declaration, initialization, and common operations"
+---
+
+## What is an Array?
+
+An array in Go is a **fixed-size** collection of elements of the same type. Once you declare an array with a specific length, that length cannot be changed. The array's length is part of its type.
+
+```go
+var ages [2]byte      // array of 2 bytes
+var tags [5]string    // array of 5 strings
+var zero [0]byte      // zero-length array (no memory)
+var nums [2 + 1]int   // length can be a constant expression
+```
+
+## Declaring Arrays
+
+### Zero Values
+
+When you declare an array without initializing it, Go automatically sets all elements to their zero values:
+
+```go
+var ages [2]int
+fmt.Printf("%#v\n", ages)  // Output: [2]int{0, 0}
+
+var tags [5]string
+fmt.Printf("%#v\n", tags)  // Output: [5]string{"", "", "", "", ""}
+```
+
+### Array Literals
+
+You can initialize arrays with values at declaration time:
+
+```go
+// Explicit length
+books := [4]string{
+    "Kafka's Revenge",
+    "Stay Golden",
+    "Everythingship",
+    "Kafka's Revenge 2nd Edition",
+}
+
+// Partial initialization (rest are zero values)
+books := [4]string{
+    "Kafka's Revenge",
+    "Stay Golden",
+}
+// books is now [4]string{"Kafka's Revenge", "Stay Golden", "", ""}
+
+// Using ellipsis - Go calculates the length
+books := [...]string{
+    "Kafka's Revenge",
+    "Stay Golden",
+    "Everythingship",
+    "Kafka's Revenge 2nd Edition",
+}
+// books is [4]string (length is 4)
+```
+
+<Note>
+The ellipsis `...` syntax lets Go automatically determine the array length based on the number of elements provided.
+</Note>
+
+## Accessing and Modifying Elements
+
+Use square brackets with an index to access or modify array elements. Indices start at 0:
+
+```go
+var ages [2]int
+
+fmt.Println(len(ages))         // 2
+fmt.Println(ages[0])           // 0
+fmt.Println(ages[1])           // 0
+fmt.Println(ages[len(ages)-1]) // Last element: 0
+
+// Modify elements
+ages[0] = 6
+ages[1] = 10
+
+fmt.Println(ages[0])  // 6
+fmt.Println(ages[1])  // 10
+
+// You can use arithmetic operations
+ages[0] *= ages[1]
+fmt.Println(ages[0])  // 60
+```
+
+<Warning>
+Accessing an index outside the array bounds will cause a runtime panic:
+```go
+var ages [2]int
+ages[-1] = 5  // Panic: index out of range
+ages[2] = 5   // Panic: index out of range
+```
+</Warning>
+
+## Keyed Elements
+
+You can use keyed elements to specify values at specific indices:
+
+```go
+rates := [3]float64{
+    0: 0.5,  // index 0
+    1: 2.5,  // index 1
+    2: 1.5,  // index 2
+}
+
+// This is equivalent to:
+rates := [3]float64{0.5, 2.5, 1.5}
+```
+
+Keyed elements are useful when you want to initialize specific positions and leave others as zero values:
+
+```go
+data := [10]int{
+    0: 1,
+    9: 10,
+}
+// data is [10]int{1, 0, 0, 0, 0, 0, 0, 0, 0, 10}
+```
+
+## Comparing Arrays
+
+Arrays are comparable if they have the same type (same length and element type). Go compares all elements:
+
+```go
+blue := [3]int{6, 9, 3}
+red := [3]int{6, 9, 3}
+
+fmt.Println(blue == red)  // true
+
+// Different values
+blue = [3]int{6, 9, 3}
+red = [3]int{3, 9, 6}
+fmt.Println(blue == red)  // false (different ordering)
+```
+
+<Warning>
+Arrays with different lengths or element types cannot be compared:
+```go
+blue := [3]int{6, 9, 3}
+red := [5]int{6, 9, 3}
+// Compile error: mismatched types [3]int and [5]int
+
+blue := [3]int64{6, 9, 3}
+red := [3]int{6, 9, 3}
+// Compile error: mismatched types [3]int64 and [3]int
+```
+</Warning>
+
+## Multi-Dimensional Arrays
+
+Arrays can contain other arrays, creating multi-dimensional structures:
+
+```go
+// 2D array: 2 students, each with 3 grades
+students := [...][3]float64{
+    {5, 6, 1},
+    {9, 8, 4},
+}
+
+var sum float64
+for _, grades := range students {
+    for _, grade := range grades {
+        sum += grade
+    }
+}
+
+const N = float64(len(students) * len(students[0]))
+fmt.Printf("Avg Grade: %g\n", sum/N)
+```
+
+You can access elements using multiple indices:
+
+```go
+students[0][0] = 5  // First student's first grade
+students[1][2] = 4  // Second student's third grade
+```
+
+## Array Assignment
+
+Arrays are **value types**. When you assign one array to another, Go copies all elements:
+
+```go
+original := [3]int{1, 2, 3}
+copy := original
+
+copy[0] = 100
+
+fmt.Println(original)  // [1 2 3] - unchanged
+fmt.Println(copy)      // [100 2 3] - modified
+```
+
+## Common Patterns
+
+### Iterating Over Arrays
+
+Using a for-range loop:
+
+```go
+books := [3]string{"Book A", "Book B", "Book C"}
+
+// With index and value
+for i, book := range books {
+    fmt.Printf("%d: %s\n", i, book)
+}
+
+// Just the value
+for _, book := range books {
+    fmt.Println(book)
+}
+
+// Just the index
+for i := range books {
+    fmt.Println(i)
+}
+```
+
+### Using len() Function
+
+```go
+ages := [3]int{25, 30, 35}
+fmt.Println(len(ages))  // 3
+
+// Useful for bounds checking
+lastIndex := len(ages) - 1
+fmt.Println(ages[lastIndex])  // 35
+```
+
+## When to Use Arrays
+
+<CardGroup cols={2}>
+  <Card title="Use Arrays When" icon="check">
+    - You know the exact size at compile time
+    - The size will never change
+    - You need value semantics (copying behavior)
+    - Working with small, fixed collections
+  </Card>
+  <Card title="Use Slices Instead When" icon="xmark">
+    - You need dynamic sizing
+    - You want reference semantics
+    - Working with variable-length collections
+    - Building flexible APIs
+  </Card>
+</CardGroup>
+
+<Note>
+In practice, **slices are used much more frequently** than arrays in Go. Arrays are the foundation upon which slices are built. See the [Slices](/data-structures/slices) documentation for the more flexible alternative.
+</Note>
+
+## Key Takeaways
+
+<AccordionGroup>
+  <Accordion title="Fixed Size">
+    Array length is fixed at declaration and is part of the type. `[3]int` and `[5]int` are different types.
+  </Accordion>
+  
+  <Accordion title="Zero Values">
+    Uninitialized array elements automatically get the zero value of their element type.
+  </Accordion>
+  
+  <Accordion title="Value Types">
+    Arrays are copied when assigned or passed to functions. Modifications to the copy don't affect the original.
+  </Accordion>
+  
+  <Accordion title="Comparable">
+    Arrays with the same type can be compared using `==` and `!=` operators.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,595 @@
+---
+title: "Structs"
+description: "Master Go structs - create custom types, organize data, and build powerful data structures"
+---
+
+## What is a Struct?
+
+A struct is a **composite data type** that groups together variables under a single name. Each variable in a struct is called a **field**. Structs let you create your own custom types to model real-world entities.
+
+```go
+type Person struct {
+    Name     string
+    Lastname string
+    Age      int
+}
+```
+
+## Why Use Structs?
+
+Before structs, you might manage related data with separate variables:
+
+```go
+// Without structs - messy and error-prone
+var name1, lastname1 string
+var age1 int
+
+var name2, lastname2 string
+var age2 int
+
+name1, lastname1, age1 = "Pablo", "Picasso", 91
+name2, lastname2, age2 = "Sigmund", "Freud", 83
+```
+
+With structs, data is organized and type-safe:
+
+```go
+// With structs - clean and organized
+type Person struct {
+    Name     string
+    Lastname string
+    Age      int
+}
+
+picasso := Person{Name: "Pablo", Lastname: "Picasso", Age: 91}
+freud := Person{Name: "Sigmund", Lastname: "Freud", Age: 83}
+```
+
+## Defining Struct Types
+
+### Basic Definition
+
+```go
+type Movie struct {
+    Title  string
+    Genre  string
+    Rating int
+}
+
+type Rental struct {
+    Address string
+    Rooms   int
+    Size    int
+    Price   int
+}
+```
+
+### Anonymous Structs
+
+You can create structs without defining a type:
+
+```go
+// Anonymous struct
+person := struct {
+    name string
+    age  int
+}{
+    name: "Alice",
+    age:  30,
+}
+
+fmt.Printf("%+v\n", person)  // {name:Alice age:30}
+```
+
+<Note>
+Anonymous structs are useful for one-off data structures, but named types are better for reusability and clarity.
+</Note>
+
+## Creating Struct Values
+
+### Struct Literals
+
+```go
+type Person struct {
+    Name     string
+    Lastname string
+    Age      int
+}
+
+// Method 1: Named fields (recommended)
+picasso := Person{
+    Name:     "Pablo",
+    Lastname: "Picasso",
+    Age:      91,
+}
+
+// Method 2: Positional (must include all fields in order)
+freud := Person{"Sigmund", "Freud", 83}
+
+// Method 3: Partial initialization (others are zero values)
+partial := Person{
+    Name: "Alice",
+}
+fmt.Printf("%+v\n", partial)  // {Name:Alice Lastname: Age:0}
+```
+
+<Tip>
+Always use **named fields** for clarity and maintainability. Positional initialization breaks if you reorder fields.
+</Tip>
+
+### Zero Values
+
+```go
+var person Person
+// All fields get zero values:
+// Name: ""
+// Lastname: ""
+// Age: 0
+
+fmt.Printf("%+v\n", person)  // {Name: Lastname: Age:0}
+```
+
+### The var Keyword
+
+```go
+// Declare and initialize later
+var freud Person
+freud.Name = "Sigmund"
+freud.Lastname = "Freud"
+freud.Age = 83
+
+fmt.Printf("%#v\n", freud)
+// main.Person{Name:"Sigmund", Lastname:"Freud", Age:83}
+```
+
+## Accessing Fields
+
+Use the dot notation to access struct fields:
+
+```go
+picasso := Person{
+    Name:     "Pablo",
+    Lastname: "Picasso",
+    Age:      91,
+}
+
+// Read fields
+fmt.Println(picasso.Name)     // "Pablo"
+fmt.Println(picasso.Age)      // 91
+
+// Modify fields
+picasso.Age = 92
+fmt.Println(picasso.Age)      // 92
+
+// Use in expressions
+fmt.Printf("%s's age is %d\n", picasso.Lastname, picasso.Age)
+// Output: Picasso's age is 92
+```
+
+## Comparing Structs
+
+Structs are comparable if all their fields are comparable:
+
+```go
+type Point struct {
+    X, Y int
+}
+
+p1 := Point{1, 2}
+p2 := Point{1, 2}
+p3 := Point{2, 1}
+
+fmt.Println(p1 == p2)  // true (all fields equal)
+fmt.Println(p1 == p3)  // false (different values)
+```
+
+<Warning>
+Structs containing slices, maps, or functions are **not comparable**:
+```go
+type NotComparable struct {
+    Name  string
+    Tags  []string  // Slice - not comparable
+}
+
+a := NotComparable{Name: "test", Tags: []string{"a"}}
+b := NotComparable{Name: "test", Tags: []string{"a"}}
+// fmt.Println(a == b)  // ❌ Compile error
+```
+</Warning>
+
+## Copying Structs
+
+Structs are **value types**. Assignment creates a copy:
+
+```go
+original := Person{Name: "Alice", Age: 30}
+copy := original
+
+copy.Age = 31
+
+fmt.Println(original.Age)  // 30 (unchanged)
+fmt.Println(copy.Age)      // 31 (modified)
+```
+
+## Struct Embedding
+
+Embedding lets you include one struct inside another, promoting the embedded fields:
+
+```go
+type Text struct {
+    Title string
+    Words int
+}
+
+type Book struct {
+    Text  // Embedded struct
+    ISBN  string
+}
+
+// Create a book
+moby := Book{
+    Text: Text{
+        Title: "Moby Dick",
+        Words: 206052,
+    },
+    ISBN: "102030",
+}
+
+// Access embedded fields directly
+fmt.Println(moby.Title)  // "Moby Dick" (promoted from Text)
+fmt.Println(moby.Words)  // 206052 (promoted from Text)
+
+// Or access via embedded field name
+fmt.Println(moby.Text.Title)  // "Moby Dick"
+fmt.Println(moby.Text.Words)  // 206052
+
+// Access Book's own fields
+fmt.Println(moby.ISBN)  // "102030"
+```
+
+### Field Name Conflicts
+
+If an embedded struct has a field with the same name as the outer struct, you must qualify it:
+
+```go
+type Text struct {
+    Title string
+    Words int
+}
+
+type Book struct {
+    Text
+    Title string  // Conflicts with Text.Title
+    ISBN  string
+}
+
+moby := Book{
+    Text: Text{
+        Title: "Moby Dick (from Text)",
+        Words: 206052,
+    },
+    Title: "Moby Dick (from Book)",
+    ISBN:  "102030",
+}
+
+fmt.Println(moby.Title)       // "Moby Dick (from Book)"
+fmt.Println(moby.Text.Title)  // "Moby Dick (from Text)"
+```
+
+<Note>
+The outer field "shadows" the embedded field. Use the full path `moby.Text.Title` to access the embedded field.
+</Note>
+
+## Pointers to Structs
+
+Use pointers when you want to modify the original struct or avoid copying large structs:
+
+```go
+type Person struct {
+    Name string
+    Age  int
+}
+
+// Create a pointer to a struct
+person := &Person{Name: "Alice", Age: 30}
+
+// Access fields (Go auto-dereferences)
+fmt.Println(person.Name)  // "Alice"
+person.Age = 31            // Modifies original
+
+// Equivalent explicit syntax
+fmt.Println((*person).Name)
+(*person).Age = 32
+```
+
+### When to Use Pointers
+
+<CardGroup cols={2}>
+  <Card title="Use Pointers When" icon="asterisk">
+    - You need to modify the struct
+    - The struct is large (avoid copying)
+    - You want to share state
+    - Implementing methods that modify the receiver
+  </Card>
+  <Card title="Use Values When" icon="copy">
+    - The struct is small
+    - You want immutability
+    - The struct represents a value (Point, Color, etc.)
+    - No need to modify the original
+  </Card>
+</CardGroup>
+
+## JSON Encoding and Decoding
+
+Structs work seamlessly with JSON encoding:
+
+```go
+import "encoding/json"
+
+type User struct {
+    Name        string `json:"username"`
+    Password    string `json:"-"`                    // Omitted from JSON
+    Permissions map[string]bool `json:"perms,omitempty"`  // Omit if empty
+}
+
+users := []User{
+    {"Alice", "1234", nil},
+    {"Admin", "admin", map[string]bool{"write": true}},
+}
+
+// Encode to JSON
+data, err := json.MarshalIndent(users, "", "  ")
+if err != nil {
+    fmt.Println(err)
+    return
+}
+
+fmt.Println(string(data))
+```
+
+Output:
+```json
+[
+  {
+    "username": "Alice"
+  },
+  {
+    "username": "Admin",
+    "perms": {
+      "write": true
+    }
+  }
+]
+```
+
+### Struct Tags
+
+Struct tags provide metadata for JSON encoding:
+
+```go
+type User struct {
+    Name     string `json:"username"`           // Rename field
+    Password string `json:"-"`                  // Omit from JSON
+    Email    string `json:"email,omitempty"`    // Omit if empty
+    Age      int    `json:"age,string"`         // Encode number as string
+}
+```
+
+Common tags:
+- `json:"name"` - Rename field in JSON
+- `json:"-"` - Skip field entirely
+- `json:",omitempty"` - Omit field if it has a zero value
+- `json:",string"` - Encode/decode as string
+
+### Decoding JSON
+
+```go
+jsonData := `{
+  "username": "Alice",
+  "email": "alice@example.com"
+}`
+
+var user User
+err := json.Unmarshal([]byte(jsonData), &user)
+if err != nil {
+    fmt.Println(err)
+    return
+}
+
+fmt.Printf("%+v\n", user)
+// {Name:Alice Password: Email:alice@example.com Age:0}
+```
+
+## Nested Structs
+
+Structs can contain other structs:
+
+```go
+type Address struct {
+    Street  string
+    City    string
+    ZipCode string
+}
+
+type Person struct {
+    Name    string
+    Age     int
+    Address Address  // Nested struct
+}
+
+person := Person{
+    Name: "Alice",
+    Age:  30,
+    Address: Address{
+        Street:  "123 Main St",
+        City:    "Springfield",
+        ZipCode: "12345",
+    },
+}
+
+fmt.Println(person.Address.City)  // "Springfield"
+```
+
+## Struct Slices and Maps
+
+### Slice of Structs
+
+```go
+type Movie struct {
+    Title  string
+    Genre  string
+    Rating int
+}
+
+movies := []Movie{
+    {Title: "Inception", Genre: "Sci-Fi", Rating: 9},
+    {Title: "The Matrix", Genre: "Sci-Fi", Rating: 9},
+    {Title: "Interstellar", Genre: "Sci-Fi", Rating: 8},
+}
+
+for _, movie := range movies {
+    fmt.Printf("%s: %d/10\n", movie.Title, movie.Rating)
+}
+```
+
+### Map of Structs
+
+```go
+type User struct {
+    Name  string
+    Email string
+}
+
+users := map[string]User{
+    "alice": {Name: "Alice", Email: "alice@example.com"},
+    "bob":   {Name: "Bob", Email: "bob@example.com"},
+}
+
+fmt.Println(users["alice"].Name)  // "Alice"
+```
+
+## Common Patterns
+
+### Constructor Functions
+
+```go
+type Rectangle struct {
+    Width  float64
+    Height float64
+}
+
+// Constructor function
+func NewRectangle(width, height float64) Rectangle {
+    return Rectangle{
+        Width:  width,
+        Height: height,
+    }
+}
+
+rect := NewRectangle(10, 5)
+```
+
+### Options Pattern
+
+```go
+type Server struct {
+    Host string
+    Port int
+}
+
+func NewServer(host string, port int) *Server {
+    return &Server{
+        Host: host,
+        Port: port,
+    }
+}
+
+server := NewServer("localhost", 8080)
+```
+
+### Builder Pattern
+
+```go
+type User struct {
+    Name  string
+    Email string
+    Age   int
+}
+
+type UserBuilder struct {
+    user User
+}
+
+func (ub *UserBuilder) Name(name string) *UserBuilder {
+    ub.user.Name = name
+    return ub
+}
+
+func (ub *UserBuilder) Email(email string) *UserBuilder {
+    ub.user.Email = email
+    return ub
+}
+
+func (ub *UserBuilder) Age(age int) *UserBuilder {
+    ub.user.Age = age
+    return ub
+}
+
+func (ub *UserBuilder) Build() User {
+    return ub.user
+}
+
+// Usage
+user := (&UserBuilder{}).
+    Name("Alice").
+    Email("alice@example.com").
+    Age(30).
+    Build()
+```
+
+## Printing Structs
+
+Different formatting options:
+
+```go
+person := Person{Name: "Alice", Age: 30}
+
+fmt.Printf("%v\n", person)   // {Alice 30}
+fmt.Printf("%+v\n", person)  // {Name:Alice Age:30} (includes field names)
+fmt.Printf("%#v\n", person)  // main.Person{Name:"Alice", Age:30} (Go syntax)
+```
+
+## Key Takeaways
+
+<AccordionGroup>
+  <Accordion title="Composite Types">
+    Structs group related data into a single custom type with named fields.
+  </Accordion>
+  
+  <Accordion title="Value Semantics">
+    Structs are value types. Assignment and passing copies the entire struct.
+  </Accordion>
+  
+  <Accordion title="Zero Values">
+    Uninitialized struct fields get their type's zero value automatically.
+  </Accordion>
+  
+  <Accordion title="Embedding">
+    Embed structs to promote fields and create composition hierarchies without traditional inheritance.
+  </Accordion>
+  
+  <Accordion title="JSON Integration">
+    Use struct tags to control JSON encoding/decoding behavior.
+  </Accordion>
+  
+  <Accordion title="Named Fields">
+    Always use named fields in struct literals for clarity and maintainability.
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Maps](/data-structures/maps) - Often used with structs for lookups
+- [Slices](/data-structures/slices) - Commonly hold collections of structs
+- [Methods](/advanced/methods) - Add behavior to struct types
+- [JSON Package](https://pkg.go.dev/encoding/json) - Encoding and decoding structs

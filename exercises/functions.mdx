@@ -1,0 +1,641 @@
+---
+title: "Functions Exercises"
+description: "Practice exercises for functions, error handling, and advanced function patterns in Go"
+---
+
+Master Go functions from basics to advanced patterns including error handling, variadic functions, and functional programming concepts.
+
+## Function Basics
+
+Learn to refactor code using functions for better organization and reusability.
+
+<Accordion title="Refactor Game Store - Step 1">
+**Objective:** Extract logic into functions
+
+Take the game store program from the structs exercises and refactor it using functions.
+
+**Key Concepts:**
+- Function declaration
+- Function parameters
+- Return values
+- Code organization
+
+**What to Refactor:**
+- Data loading logic
+- Game printing logic
+- Basic operations
+
+**Approach:**
+```go
+func loadGames() []Game {
+    // Return slice of games
+}
+
+func printGame(game Game) {
+    // Print game details
+}
+
+func printGames(games []Game) {
+    // Print all games
+}
+```
+
+**Benefits:**
+- Reusable code
+- Easier testing
+- Better readability
+- Separation of concerns
+</Accordion>
+
+<Accordion title="Refactor Game Store - Step 2">
+**Objective:** Refactor command handling
+
+Continue the refactoring by creating functions for command processing.
+
+**Key Concepts:**
+- Switch statements in functions
+- Function composition
+- Input processing
+
+**What to Refactor:**
+- Command parsing
+- Command execution
+- User input handling
+
+**Approach:**
+```go
+func parseCommand(input string) string {
+    // Clean and validate command
+}
+
+func handleCommand(cmd string, games []Game) {
+    switch cmd {
+    case "list":
+        printGames(games)
+    case "quit":
+        // Exit
+    }
+}
+```
+
+**Benefits:**
+- Each function has single responsibility
+- Commands are easier to add
+- Logic is isolated and testable
+</Accordion>
+
+<Accordion title="Refactor Game Store - Step 3">
+**Objective:** Add JSON encoding/decoding functions
+
+Create functions for JSON marshaling and unmarshaling.
+
+**Key Concepts:**
+- Error handling in functions
+- Working with multiple return values
+- File I/O with functions
+
+**What to Add:**
+```go
+func encodeGames(games []Game) ([]byte, error) {
+    return json.Marshal(games)
+}
+
+func decodeGames(data []byte) ([]Game, error) {
+    var games []Game
+    err := json.Unmarshal(data, &games)
+    return games, err
+}
+
+func saveGames(games []Game, filename string) error {
+    data, err := encodeGames(games)
+    if err != nil {
+        return err
+    }
+    return os.WriteFile(filename, data, 0644)
+}
+
+func loadGamesFromFile(filename string) ([]Game, error) {
+    data, err := os.ReadFile(filename)
+    if err != nil {
+        return nil, err
+    }
+    return decodeGames(data)
+}
+```
+
+**Benefits:**
+- Proper error handling
+- Composable functions
+- Easy to test each piece
+- Clear error propagation
+</Accordion>
+
+<Accordion title="Rewrite Log Parser">
+**Objective:** Build a log parser using functions
+
+Create a program that parses log files using well-organized functions.
+
+**Key Concepts:**
+- String parsing
+- Function pipeline
+- Data transformation
+
+**Functions to Create:**
+- `parseLine(line string) LogEntry`
+- `filterByLevel(entries []LogEntry, level string) []LogEntry`
+- `formatEntry(entry LogEntry) string`
+- `processLogFile(filename string) error`
+
+**Approach:**
+1. Read log file line by line
+2. Parse each line into structured data
+3. Filter and transform as needed
+4. Output results
+
+**Example:**
+```go
+type LogEntry struct {
+    Timestamp time.Time
+    Level     string
+    Message   string
+}
+
+func parseLine(line string) (LogEntry, error) {
+    // Parse log line format
+}
+
+func filterByLevel(entries []LogEntry, level string) []LogEntry {
+    var filtered []LogEntry
+    for _, entry := range entries {
+        if entry.Level == level {
+            filtered = append(filtered, entry)
+        }
+    }
+    return filtered
+}
+```
+</Accordion>
+
+## Error Handling
+
+Master Go's error handling patterns with functions.
+
+<Accordion title="Function Error Patterns">
+**Objective:** Learn standard error handling
+
+Understand common error handling patterns in Go functions.
+
+**Key Concepts:**
+- Error as return value
+- Multiple return values
+- Error checking
+- Error wrapping
+
+**Pattern 1: Simple Error Return**
+```go
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("division by zero")
+    }
+    return a / b, nil
+}
+
+result, err := divide(10, 0)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+**Pattern 2: Error Wrapping (Go 1.13+)**
+```go
+func processFile(filename string) error {
+    data, err := os.ReadFile(filename)
+    if err != nil {
+        return fmt.Errorf("failed to read file: %w", err)
+    }
+    // Process data
+    return nil
+}
+```
+
+**Pattern 3: Custom Errors**
+```go
+type ValidationError struct {
+    Field string
+    Issue string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("%s: %s", e.Field, e.Issue)
+}
+```
+</Accordion>
+
+<Accordion title="Guard Clauses">
+**Objective:** Use early returns for cleaner code
+
+Implement guard clauses to reduce nesting.
+
+**Key Concepts:**
+- Early returns
+- Error-first approach
+- Flat code structure
+
+**Before:**
+```go
+func processUser(id int) error {
+    user, err := findUser(id)
+    if err == nil {
+        if user.Active {
+            if user.Verified {
+                // Do work
+                return nil
+            } else {
+                return errors.New("not verified")
+            }
+        } else {
+            return errors.New("not active")
+        }
+    }
+    return err
+}
+```
+
+**After:**
+```go
+func processUser(id int) error {
+    user, err := findUser(id)
+    if err != nil {
+        return err
+    }
+    if !user.Active {
+        return errors.New("not active")
+    }
+    if !user.Verified {
+        return errors.New("not verified")
+    }
+    // Do work
+    return nil
+}
+```
+</Accordion>
+
+## Advanced Function Patterns
+
+Explore more sophisticated function patterns used in Go.
+
+<Accordion title="Refactor with Defer">
+**Objective:** Use defer for cleanup
+
+Refactor the `headerOf` function using defer and named return parameters.
+
+**Key Concepts:**
+- Defer statement
+- Named return values
+- Resource cleanup
+- Panic recovery
+
+**From Advanced Functions Exercises:**
+Use a map, defer, and named parameters to improve error handling and cleanup.
+
+**Approach:**
+```go
+func headerOf(filename string) (header string, err error) {
+    file, err := os.Open(filename)
+    if err != nil {
+        return "", err
+    }
+    defer file.Close()  // Always closes, even on error
+    
+    // Read header
+    reader := bufio.NewReader(file)
+    header, err = reader.ReadString('\n')
+    return  // Named returns
+}
+```
+
+**Benefits:**
+- Guaranteed cleanup
+- Less error-prone
+- Cleaner code flow
+- Panic safety
+</Accordion>
+
+<Accordion title="Variadic Functions">
+**Objective:** Work with variable arguments
+
+Create functions that accept any number of arguments.
+
+**Key Concepts:**
+- Variadic parameter syntax
+- Slice parameter
+- Spreading slices
+
+**Approach:**
+```go
+func sum(numbers ...int) int {
+    total := 0
+    for _, n := range numbers {
+        total += n
+    }
+    return total
+}
+
+// Usage
+sum(1, 2, 3)
+sum(1, 2, 3, 4, 5)
+
+nums := []int{1, 2, 3}
+sum(nums...)  // Spread operator
+```
+
+**Common Uses:**
+- fmt.Printf
+- Flexible APIs
+- Builder patterns
+</Accordion>
+
+<Accordion title="Function Types">
+**Objective:** Use functions as values
+
+Learn to pass functions as parameters and return them.
+
+**Key Concepts:**
+- Functions as first-class values
+- Function types
+- Callbacks
+- Function composition
+
+**Approach:**
+```go
+// Function type definition
+type Operation func(int, int) int
+
+// Function that accepts a function
+func apply(a, b int, op Operation) int {
+    return op(a, b)
+}
+
+// Usage
+add := func(x, y int) int { return x + y }
+result := apply(5, 3, add)
+
+// Or inline
+result = apply(5, 3, func(x, y int) int {
+    return x * y
+})
+```
+</Accordion>
+
+<Accordion title="Higher-Order Functions">
+**Objective:** Build function generators
+
+Create functions that return other functions.
+
+**Key Concepts:**
+- Closures
+- Function factories
+- Capturing variables
+
+**Approach:**
+```go
+// Function that returns a function
+func makeAdder(x int) func(int) int {
+    return func(y int) int {
+        return x + y
+    }
+}
+
+add5 := makeAdder(5)
+fmt.Println(add5(3))   // 8
+fmt.Println(add5(10))  // 15
+
+// Each closure has its own x
+add10 := makeAdder(10)
+fmt.Println(add10(3))  // 13
+```
+
+**Common Patterns:**
+- Middleware
+- Configuration
+- Partial application
+- Decorators
+</Accordion>
+
+<Accordion title="Method Chaining">
+**Objective:** Create fluent interfaces
+
+Build chainable APIs for better ergonomics.
+
+**Key Concepts:**
+- Returning self
+- Method receivers
+- Builder pattern
+
+**Approach:**
+```go
+type Query struct {
+    table  string
+    where  string
+    limit  int
+}
+
+func (q *Query) From(table string) *Query {
+    q.table = table
+    return q
+}
+
+func (q *Query) Where(condition string) *Query {
+    q.where = condition
+    return q
+}
+
+func (q *Query) Limit(n int) *Query {
+    q.limit = n
+    return q
+}
+
+// Usage
+query := &Query{}
+query.From("users").
+      Where("age > 18").
+      Limit(10)
+```
+</Accordion>
+
+<Accordion title="Options Pattern">
+**Objective:** Handle optional parameters elegantly
+
+Use the functional options pattern for configuration.
+
+**Key Concepts:**
+- Configuration options
+- Variadic functions
+- Functional programming
+
+**Approach:**
+```go
+type Server struct {
+    host string
+    port int
+    timeout time.Duration
+}
+
+type Option func(*Server)
+
+func WithHost(host string) Option {
+    return func(s *Server) {
+        s.host = host
+    }
+}
+
+func WithPort(port int) Option {
+    return func(s *Server) {
+        s.port = port
+    }
+}
+
+func WithTimeout(timeout time.Duration) Option {
+    return func(s *Server) {
+        s.timeout = timeout
+    }
+}
+
+func NewServer(opts ...Option) *Server {
+    s := &Server{
+        host: "localhost",  // defaults
+        port: 8080,
+        timeout: 30 * time.Second,
+    }
+    for _, opt := range opts {
+        opt(s)
+    }
+    return s
+}
+
+// Usage
+server := NewServer(
+    WithHost("0.0.0.0"),
+    WithPort(3000),
+)
+```
+</Accordion>
+
+## Testing Functions
+
+Learn to write testable functions and test them effectively.
+
+<Accordion title="Table-Driven Tests">
+**Objective:** Test functions comprehensively
+
+Use table-driven tests for thorough function testing.
+
+**Key Concepts:**
+- Test cases as data
+- Loop-based testing
+- Subtests
+
+**Approach:**
+```go
+func TestSum(t *testing.T) {
+    tests := []struct {
+        name     string
+        input    []int
+        expected int
+    }{
+        {"empty", []int{}, 0},
+        {"single", []int{5}, 5},
+        {"multiple", []int{1, 2, 3}, 6},
+        {"negative", []int{-1, -2}, -3},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result := sum(tt.input...)
+            if result != tt.expected {
+                t.Errorf("sum(%v) = %d; want %d",
+                    tt.input, result, tt.expected)
+            }
+        })
+    }
+}
+```
+</Accordion>
+
+## Best Practices
+
+<Note>
+**Function Design Tips:**
+
+1. **Single Responsibility**: Each function should do one thing well
+2. **Small Functions**: Keep functions short and focused
+3. **Clear Names**: Use descriptive names that indicate purpose
+4. **Error Handling**: Always handle errors, don't ignore them
+5. **Documentation**: Add comments for exported functions
+6. **Early Returns**: Use guard clauses to reduce nesting
+7. **Limit Parameters**: Too many parameters suggest refactoring needed
+8. **Pure Functions**: Prefer functions without side effects when possible
+</Note>
+
+<Warning>
+**Common Pitfalls:**
+
+- Ignoring error return values
+- Too many nested conditionals
+- Functions that are too long
+- Unclear parameter names
+- Missing error context
+- Not using defer for cleanup
+</Warning>
+
+## Quick Reference
+
+**Function Declaration:**
+```go
+func name(param type) returnType {
+    // body
+}
+```
+
+**Multiple Returns:**
+```go
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("divide by zero")
+    }
+    return a / b, nil
+}
+```
+
+**Named Returns:**
+```go
+func calculate(x int) (result int, err error) {
+    result = x * 2
+    return  // returns result and err
+}
+```
+
+**Variadic:**
+```go
+func sum(nums ...int) int {
+    // nums is []int
+}
+```
+
+**Methods:**
+```go
+func (s *Server) Start() error {
+    // s is the receiver
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Structures" icon="database" href="/exercises/data-structures">
+    Review working with complex data
+  </Card>
+  <Card title="Control Flow" icon="code-branch" href="/exercises/control-flow">
+    Practice conditionals and loops
+  </Card>
+</CardGroup>

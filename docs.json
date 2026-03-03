@@ -1,122 +1,138 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Learn Go",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#00ADD8",
+    "light": "#5DC9E2",
+    "dark": "#00758D"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/inancgumus/learngo"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/inancgumus/learngo",
+      "twitter": "https://twitter.com/inancgumus"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Learn",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Fundamentals",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "fundamentals/packages-and-scopes",
+              "fundamentals/variables",
+              "fundamentals/printf",
+              "fundamentals/numbers-and-strings",
+              "fundamentals/type-system",
+              "fundamentals/constants"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Control Flow",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "control-flow/if-statements",
+              "control-flow/switch-statements",
+              "control-flow/loops"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Data Structures",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "data-structures/arrays",
+              "data-structures/slices",
+              "data-structures/maps",
+              "data-structures/strings-runes-bytes",
+              "data-structures/structs"
+            ]
+          },
+          {
+            "group": "Functions",
+            "pages": [
+              "functions/basics",
+              "functions/variadic",
+              "functions/closures",
+              "functions/higher-order",
+              "functions/deferred"
+            ]
+          },
+          {
+            "group": "Advanced Topics",
+            "pages": [
+              "advanced/pointers",
+              "advanced/methods",
+              "advanced/interfaces",
+              "advanced/error-handling",
+              "advanced/concurrency"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Practice",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Projects",
             "pages": [
-              "api-reference/introduction"
+              "projects/overview",
+              "projects/greeter",
+              "projects/retro-led-clock",
+              "projects/bouncing-ball",
+              "projects/empty-file-finder",
+              "projects/spam-masker",
+              "projects/text-wrapper",
+              "projects/lucky-number-game",
+              "projects/word-finder"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Exercises",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "exercises/getting-started",
+              "exercises/variables-and-types",
+              "exercises/control-flow",
+              "exercises/data-structures",
+              "exercises/functions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/best-practices",
+              "reference/idioms",
+              "reference/design-patterns",
+              "reference/troubleshooting"
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "community/contributing",
+              "community/faq"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

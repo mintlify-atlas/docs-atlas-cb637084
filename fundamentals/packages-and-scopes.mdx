@@ -1,0 +1,289 @@
+---
+title: "Packages and Scopes"
+description: "Learn how Go organizes code using packages and controls visibility with scopes"
+---
+
+## What are Packages?
+
+In Go, packages are the fundamental way to organize and structure your code. Every Go source file belongs to a package, and programs are built by linking packages together.
+
+### The Main Package
+
+Every executable Go program must have exactly one `main` package with a `main()` function as the entry point:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello!")
+}
+```
+
+### Organizing Code Across Multiple Files
+
+Files in the same package can access each other's functions and variables. All files in the same directory with the same package declaration are considered part of the same package.
+
+<Steps>
+  <Step title="Create a package">
+    All files in the same directory should declare the same package name.
+  </Step>
+  
+  <Step title="Define functions in separate files">
+    Functions defined in one file are accessible from other files in the same package.
+  </Step>
+  
+  <Step title="Run the package">
+    Compile all files together using `go run .` or `go build .`
+  </Step>
+</Steps>
+
+**Example with multiple files:**
+
+```go hey.go
+package main
+
+import "fmt"
+
+func hey() {
+    fmt.Println("Hey!")
+}
+```
+
+```go bye.go
+package main
+
+import "fmt"
+
+func bye() {
+    fmt.Println("Bye!")
+}
+```
+
+```go main.go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello!")
+    
+    // Functions from other files in the same package
+    // are accessible here
+    bye()
+    hey()
+}
+```
+
+<Note>
+All files in the same package share the same namespace. You cannot declare the same function name twice within a package, even if they're in different files.
+</Note>
+
+## Understanding Scopes
+
+Scope determines where a variable, constant, or function can be accessed in your code. Go has several levels of scope:
+
+### File Scope
+
+Import statements have file scope - they're only visible within the file where they're declared:
+
+```go
+package main
+
+// File scope - only this file can use fmt
+import "fmt"
+
+func main() {
+    fmt.Println("Hello")
+}
+```
+
+### Package Scope
+
+Declarations at the package level (outside any function) are visible throughout all files in the package:
+
+```go
+package main
+
+import "fmt"
+
+// Package scope - visible in all files in this package
+const ok = true
+
+func main() {
+    fmt.Println(ok) // ✓ Accessible
+}
+```
+
+### Block Scope
+
+Variables declared inside a function or block are only visible within that block:
+
+```go
+package main
+
+func nope() {
+    // Block scope - only visible inside this function
+    const ok = true
+    var hello = "Hello"
+    
+    _ = hello
+} // Variables disappear here
+
+func main() {
+    // hello and ok are NOT visible here
+    // fmt.Println(hello, ok) // ✗ Error
+}
+```
+
+### Nested Scopes
+
+Inner scopes can access outer scopes, but not vice versa:
+
+```go
+package main
+
+import "fmt"
+
+const outer = "I'm outside!"
+
+func main() {
+    const inner = "I'm inside!"
+    
+    fmt.Println(outer) // ✓ Can access outer scope
+    fmt.Println(inner) // ✓ Can access own scope
+    
+    {
+        const nested = "I'm nested!"
+        fmt.Println(outer) // ✓ Can access outer scopes
+        fmt.Println(inner) // ✓ Can access outer scopes
+        fmt.Println(nested) // ✓ Can access own scope
+    }
+    
+    // fmt.Println(nested) // ✗ Cannot access inner scope
+}
+```
+
+<Warning>
+When an inner scope declares a variable with the same name as an outer scope, the inner declaration "shadows" the outer one. The outer variable becomes inaccessible within that scope.
+</Warning>
+
+## Importing Packages
+
+### Basic Import
+
+To use code from another package, you must import it:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello!")
+}
+```
+
+### Multiple Imports
+
+You can import multiple packages using either syntax:
+
+```go
+import "fmt"
+import "math"
+```
+
+Or the more common grouped syntax:
+
+```go
+import (
+    "fmt"
+    "math"
+)
+```
+
+### Renaming Imports
+
+If you have naming conflicts or want to shorten package names, you can rename imports:
+
+```go
+package main
+
+import (
+    f "fmt"
+    m "math"
+)
+
+func main() {
+    f.Println(m.Pi)
+}
+```
+
+## Exported vs Unexported Names
+
+Go controls visibility across packages using capitalization:
+
+- **Exported** (public): Names that start with an uppercase letter can be accessed from other packages
+- **Unexported** (private): Names that start with a lowercase letter are only accessible within their own package
+
+```go
+package mypackage
+
+// Exported - can be used by other packages
+func PublicFunction() {
+    // ...
+}
+
+// Unexported - only visible within mypackage
+func privateFunction() {
+    // ...
+}
+
+// Exported variable
+var MaxValue = 100
+
+// Unexported variable
+var internalCounter = 0
+```
+
+<Tip>
+This capitalization rule applies to all top-level declarations: functions, types, variables, and constants.
+</Tip>
+
+## Best Practices
+
+1. **Keep packages focused**: Each package should have a clear, single purpose
+2. **Use descriptive package names**: Package names should be short, lowercase, and descriptive
+3. **Avoid circular dependencies**: Package A should not import package B if B imports A
+4. **Minimize package scope**: Declare variables at the smallest scope necessary
+5. **Use unexported names by default**: Only export what needs to be public API
+
+## Common Patterns
+
+### Package-level constants and variables
+
+```go
+package config
+
+// Exported configuration
+const DefaultPort = 8080
+
+// Unexported internal state
+var initialized = false
+```
+
+### Grouping related functionality
+
+```go
+package math
+
+// Group related functions in the same package
+func Add(a, b int) int { return a + b }
+func Subtract(a, b int) int { return a - b }
+func Multiply(a, b int) int { return a * b }
+```
+
+<Note>
+Understanding packages and scopes is fundamental to writing clean, maintainable Go code. They help you organize your codebase and control how different parts of your program interact.
+</Note>

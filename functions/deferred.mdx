@@ -1,0 +1,575 @@
+---
+title: 'Deferred Functions'
+description: 'Master the defer keyword in Go for cleanup, resource management, and executing code when functions return'
+---
+
+## Introduction
+
+The `defer` keyword in Go schedules a function call to be executed when the surrounding function returns. Deferred functions are essential for cleanup operations, resource management, and ensuring code executes regardless of how a function exits.
+
+```go
+func main() {
+    defer fmt.Println("This runs last")
+    fmt.Println("This runs first")
+}
+// Output:
+// This runs first
+// This runs last
+```
+
+## Basic Syntax
+
+The `defer` statement delays the execution of a function until the surrounding function returns:
+
+```go
+defer functionCall()
+```
+
+The deferred function executes:
+- After the surrounding function completes normally
+- When a `return` statement is reached
+- When a panic occurs (before propagating the panic)
+
+## When Defer Executes
+
+```go
+func single() {
+    var count int
+    
+    defer fmt.Println(count)  // Deferred with count = 0
+    
+    count++
+    fmt.Println(count)        // Prints: 1
+    
+    // defer runs here when function returns
+    // Prints: 0 (the value when defer was called)
+}
+```
+
+<Warning>
+Deferred function arguments are evaluated **immediately** when the defer statement executes, not when the deferred function runs.
+</Warning>
+
+### Correct Way to Capture Final Values
+
+Use an anonymous function to capture variables by reference:
+
+```go
+func single() {
+    var count int
+    
+    defer func() {
+        fmt.Println(count)  // Will print current value
+    }()
+    
+    count++
+    fmt.Println(count)      // Prints: 1
+    
+    // defer runs here
+    // Prints: 1 (current value)
+}
+```
+
+## Defer Stack (LIFO Order)
+
+When multiple `defer` statements are used, they execute in **Last-In-First-Out (LIFO)** order:
+
+```go
+func stacked() {
+    for count := 1; count <= 5; count++ {
+        defer fmt.Println(count)
+    }
+    
+    fmt.Println("the stacked func returns")
+}
+// Output:
+// the stacked func returns
+// 5
+// 4
+// 3
+// 2
+// 1
+```
+
+<Note>
+Think of deferred functions as a stack: the last one deferred is the first one executed. This is particularly useful for cleanup operations that need to happen in reverse order.
+</Note>
+
+## Practical Use Cases
+
+### 1. Resource Cleanup
+
+The most common use of `defer` is ensuring resources are cleaned up:
+
+```go
+func processFile(filename string) error {
+    file, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer file.Close() // Ensures file is closed when function returns
+    
+    // Work with file...
+    data := make([]byte, 1024)
+    _, err = file.Read(data)
+    return err
+}
+```
+
+### 2. Unlocking Mutexes
+
+```go
+var mu sync.Mutex
+var balance int
+
+func deposit(amount int) {
+    mu.Lock()
+    defer mu.Unlock() // Ensures unlock even if panic occurs
+    
+    balance += amount
+    
+    if balance < 0 {
+        panic("negative balance") // mutex still unlocked!
+    }
+}
+```
+
+### 3. Timing Functions
+
+Measure function execution time elegantly:
+
+```go
+func findTheMeaning() {
+    defer measure("findTheMeaning")()
+    
+    // Do some heavy calculation
+    time.Sleep(time.Second * 2)
+}
+
+func measure(name string) func() {
+    start := time.Now()
+    fmt.Printf("%s starts...\n", name)
+    
+    return func() {
+        fmt.Printf("%s took %v\n", name, time.Since(start))
+    }
+}
+
+// Output:
+// findTheMeaning starts...
+// findTheMeaning took 2.001s
+```
+
+<Tip>
+Notice the `()` after `measure("findTheMeaning")`. The function returns a closure that gets deferred, and we call `measure` immediately to start the timer.
+</Tip>
+
+### Without Defer (More Verbose)
+
+```go
+func findTheMeaningNoDefer() {
+    start := time.Now()
+    fmt.Printf("%s starts...\n", "findTheMeaning")
+    
+    // Do some heavy calculation...
+    time.Sleep(time.Second * 2)
+    
+    // Must remember to add this at every return point
+    fmt.Printf("%s took %v\n", "findTheMeaning", time.Since(start))
+}
+```
+
+## Advanced Patterns
+
+### 1. Database Transactions
+
+```go
+func updateUser(db *sql.DB, userID int, name string) error {
+    tx, err := db.Begin()
+    if err != nil {
+        return err
+    }
+    
+    defer func() {
+        if err != nil {
+            tx.Rollback()
+        } else {
+            tx.Commit()
+        }
+    }()
+    
+    _, err = tx.Exec("UPDATE users SET name = ? WHERE id = ?", name, userID)
+    return err
+}
+```
+
+### 2. Recovering from Panics
+
+```go
+func safeProcess() (err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            err = fmt.Errorf("panic recovered: %v", r)
+        }
+    }()
+    
+    // Code that might panic
+    riskyOperation()
+    
+    return nil
+}
+
+func riskyOperation() {
+    panic("something went wrong")
+}
+```
+
+### 3. Modifying Named Return Values
+
+Deferred functions can modify named return values:
+
+```go
+func divide(a, b int) (result int, err error) {
+    defer func() {
+        if err != nil {
+            result = 0 // Ensure result is 0 on error
+        }
+    }()
+    
+    if b == 0 {
+        return 0, errors.New("division by zero")
+    }
+    
+    return a / b, nil
+}
+```
+
+### 4. Logging Function Entry/Exit
+
+```go
+func trace(name string) func() {
+    fmt.Printf("Entering: %s\n", name)
+    return func() {
+        fmt.Printf("Exiting: %s\n", name)
+    }
+}
+
+func complexOperation() {
+    defer trace("complexOperation")()
+    
+    // Do work...
+    time.Sleep(time.Second)
+}
+// Output:
+// Entering: complexOperation
+// Exiting: complexOperation
+```
+
+### 5. Context Cleanup
+
+```go
+func worker(ctx context.Context) {
+    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+    defer cancel() // Ensures context is cancelled
+    
+    // Do work with context...
+    select {
+    case <-time.After(3 * time.Second):
+        fmt.Println("work completed")
+    case <-ctx.Done():
+        fmt.Println("work cancelled")
+    }
+}
+```
+
+## Common Patterns
+
+### Opening and Closing
+
+```go
+// File operations
+f, err := os.Open("file.txt")
+if err != nil {
+    return err
+}
+defer f.Close()
+
+// HTTP response bodies
+resp, err := http.Get(url)
+if err != nil {
+    return err
+}
+defer resp.Body.Close()
+
+// Database connections
+conn, err := db.Conn(ctx)
+if err != nil {
+    return err
+}
+defer conn.Close()
+```
+
+### Lock and Unlock
+
+```go
+mu.Lock()
+defer mu.Unlock()
+
+// Critical section
+// Safe even if panic occurs
+```
+
+### Start and Stop
+
+```go
+server.Start()
+defer server.Stop()
+
+timer := time.NewTimer(5 * time.Second)
+defer timer.Stop()
+```
+
+## Performance Considerations
+
+While `defer` is convenient, it has a small performance cost:
+
+```go
+// Slightly faster
+func withoutDefer() {
+    mu.Lock()
+    // quick operation
+    mu.Unlock()
+}
+
+// Slightly slower but safer
+func withDefer() {
+    mu.Lock()
+    defer mu.Unlock()
+    // quick operation
+}
+```
+
+<Note>
+The performance difference is negligible in most cases. Use `defer` for clarity and safety unless profiling shows it's a bottleneck.
+</Note>
+
+## Order of Operations
+
+Understanding when deferred functions run relative to other operations:
+
+```go
+func example() (result int) {
+    defer func() {
+        result++ // Runs after return value is set
+    }()
+    
+    return 5 // Sets result to 5
+}
+// Returns: 6
+```
+
+### Execution Order
+
+1. Function body executes
+2. Return values are evaluated and assigned
+3. Deferred functions execute (LIFO order)
+4. Function actually returns
+
+```go
+func sequence() (result string) {
+    defer func() { result += " third" }()
+    defer func() { result += " second" }()
+    
+    result = "first"
+    return result
+}
+// Returns: "first second third"
+```
+
+## Common Pitfalls
+
+### 1. Deferring in Loops
+
+Be careful with `defer` in loops - deferred calls accumulate:
+
+```go
+// WRONG: All file handles stay open until function returns
+func processFiles(filenames []string) error {
+    for _, filename := range filenames {
+        f, err := os.Open(filename)
+        if err != nil {
+            return err
+        }
+        defer f.Close() // Defers accumulate!
+        
+        // Process file...
+    }
+    return nil
+}
+
+// CORRECT: Use a function to scope each defer
+func processFiles(filenames []string) error {
+    for _, filename := range filenames {
+        if err := processFile(filename); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
+func processFile(filename string) error {
+    f, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer f.Close() // Closes when processFile returns
+    
+    // Process file...
+    return nil
+}
+```
+
+### 2. Argument Evaluation
+
+Arguments are evaluated when `defer` executes, not when the deferred function runs:
+
+```go
+func wrong() {
+    i := 0
+    defer fmt.Println(i) // i evaluated now, prints 0
+    i++
+}
+
+func correct() {
+    i := 0
+    defer func() {
+        fmt.Println(i) // i evaluated when function runs, prints 1
+    }()
+    i++
+}
+```
+
+### 3. Error Shadowing
+
+Be careful not to shadow errors in deferred functions:
+
+```go
+// WRONG: err from defer shadows original error
+func badExample() (err error) {
+    f, err := os.Open("file.txt")
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+    
+    _, err = f.Read(make([]byte, 10))
+    // If Read fails, defer might override this error
+    return err
+}
+
+// CORRECT: Check errors explicitly
+func goodExample() (err error) {
+    f, err := os.Open("file.txt")
+    if err != nil {
+        return err
+    }
+    defer func() {
+        if closeErr := f.Close(); closeErr != nil && err == nil {
+            err = closeErr
+        }
+    }()
+    
+    _, err = f.Read(make([]byte, 10))
+    return err
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Defer Immediately" icon="bolt">
+    Place `defer` statements right after acquiring resources to prevent forgetting cleanup
+  </Card>
+  
+  <Card title="Use Closures for Late Binding" icon="link">
+    Wrap deferred calls in anonymous functions to capture variables by reference
+  </Card>
+  
+  <Card title="Watch Loop Defers" icon="rotate">
+    Avoid deferring in loops; use helper functions to scope each defer properly
+  </Card>
+  
+  <Card title="Handle Errors" icon="triangle-exclamation">
+    Check errors from deferred cleanup operations, especially for Close() and Unlock()
+  </Card>
+</CardGroup>
+
+## Real-World Example
+
+Here's a comprehensive example using multiple defer patterns:
+
+```go
+func processData(filename string) (err error) {
+    // Logging entry/exit
+    defer trace("processData")()
+    
+    // Timing
+    defer measure("processData")()
+    
+    // Error recovery
+    defer func() {
+        if r := recover(); r != nil {
+            err = fmt.Errorf("panic: %v", r)
+        }
+    }()
+    
+    // Resource cleanup
+    f, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+    
+    // Transaction handling
+    tx, err := db.Begin()
+    if err != nil {
+        return err
+    }
+    defer func() {
+        if err != nil {
+            tx.Rollback()
+        } else {
+            tx.Commit()
+        }
+    }()
+    
+    // Do actual work...
+    return nil
+}
+```
+
+## Summary
+
+The `defer` keyword is a powerful Go feature that:
+
+- Ensures cleanup code runs regardless of how a function exits
+- Executes in LIFO (stack) order
+- Evaluates arguments immediately but runs the function later
+- Works with panic recovery
+- Can modify named return values
+
+<Tip>
+Use `defer` for resource cleanup, unlocking mutexes, closing connections, and any cleanup that must happen regardless of how a function exits. It makes your code safer and more maintainable.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Function Basics" icon="book" href="/functions/basics">
+    Review fundamental function concepts and patterns
+  </Card>
+  
+  <Card title="Closures" icon="lock" href="/functions/closures">
+    Learn how deferred functions interact with closures
+  </Card>
+</CardGroup>
