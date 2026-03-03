@@ -1,0 +1,148 @@
+{
+  "projectType": "general",
+  "projectName": "Learn Go",
+  "projectDescription": "A comprehensive Go programming course with 1000+ hand-crafted examples, exercises, and quizzes for learning by doing.",
+  "theme": "palm",
+  "primaryColor": "#00ADD8",
+  "lightColor": "#5DC9E2",
+  "darkColor": "#00758D",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Learn",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Fundamentals",
+            "pages": [
+              "fundamentals/packages-and-scopes",
+              "fundamentals/variables",
+              "fundamentals/printf",
+              "fundamentals/numbers-and-strings",
+              "fundamentals/type-system",
+              "fundamentals/constants"
+            ]
+          },
+          {
+            "group": "Control Flow",
+            "pages": [
+              "control-flow/if-statements",
+              "control-flow/switch-statements",
+              "control-flow/loops"
+            ]
+          },
+          {
+            "group": "Data Structures",
+            "pages": [
+              "data-structures/arrays",
+              "data-structures/slices",
+              "data-structures/maps",
+              "data-structures/strings-runes-bytes",
+              "data-structures/structs"
+            ]
+          },
+          {
+            "group": "Functions",
+            "pages": [
+              "functions/basics",
+              "functions/variadic",
+              "functions/closures",
+              "functions/higher-order",
+              "functions/deferred"
+            ]
+          },
+          {
+            "group": "Advanced Topics",
+            "pages": [
+              "advanced/pointers",
+              "advanced/methods",
+              "advanced/interfaces",
+              "advanced/error-handling",
+              "advanced/concurrency"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Practice",
+        "groups": [
+          {
+            "group": "Projects",
+            "pages": [
+              "projects/overview",
+              "projects/greeter",
+              "projects/retro-led-clock",
+              "projects/bouncing-ball",
+              "projects/empty-file-finder",
+              "projects/spam-masker",
+              "projects/text-wrapper",
+              "projects/lucky-number-game",
+              "projects/word-finder"
+            ]
+          },
+          {
+            "group": "Exercises",
+            "pages": [
+              "exercises/getting-started",
+              "exercises/variables-and-types",
+              "exercises/control-flow",
+              "exercises/data-structures",
+              "exercises/functions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/best-practices",
+              "reference/idioms",
+              "reference/design-patterns",
+              "reference/troubleshooting"
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "community/contributing",
+              "community/faq"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "1000+ hand-crafted Go examples",
+    "Progressive learning path from basics to advanced topics",
+    "Hands-on exercises and quizzes",
+    "Real-world projects including LED clock, bouncing ball, and more",
+    "Comprehensive coverage of Go fundamentals and advanced concepts",
+    "Learn-by-doing approach with practical code examples"
+  ],
+  "publicApiSurface": [
+    "26+ structured lessons covering Go fundamentals to advanced topics",
+    "Installation guides for macOS, Windows, and Linux",
+    "Basic data types, variables, and constants",
+    "Control flow: if, switch, and loops",
+    "Data structures: arrays, slices, maps, and structs",
+    "Functions: basics, variadic, closures, and higher-order",
+    "Pointers and memory management",
+    "Methods and interfaces",
+    "Error handling and panic/recover",
+    "Concurrency with goroutines and channels",
+    "8+ hands-on projects",
+    "100+ exercises across all difficulty levels",
+    "Quiz questions for knowledge validation"
+  ]
+}
